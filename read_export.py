@@ -173,11 +173,6 @@ prep = preprocessor()
 for line in lines:
 	vals = re.split(r'\t+', line.rstrip('\r?\n?'))
 	
-	#was bedeuten im text die vielen apostrophe (elisionen?)
-	#sentence id 73, 271, 372, 34434: schluss-sigma? welche bedeutung hat es? -> eher: fehlerhafte Darstellung von Großbuchstaben -> nach anderen stellen suchen, in denen dies auftritt
-	#34453 -> N
-	#Achilleus mal mit einem, mal mit zwei l -> normal?
-	
 	text = prep.normalise(vals[4])
 	result = prep.syllabify(text)
 	
