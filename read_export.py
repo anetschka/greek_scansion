@@ -1,6 +1,9 @@
 import re
 import sys
+import hfst
 import codecs
+#the general algorithm is implemented as finite-state machine
+import transitions
 #for random number generation
 from random import randint
 #for syllabification
@@ -45,6 +48,7 @@ class selector(object):
 
 class preprocessor(object):
 
+	#removes accents, lowercases
 	def normalise(self, text):
 		#some regexes have to be applied more than once since diacritics can be combined
 		text = re.sub(r'ῆ', 'η', text)
@@ -148,16 +152,42 @@ class preprocessor(object):
 		#finally, lower-case everything
 		return text.lower()
 		
+	#syllabifies words, removes punctuation
 	def syllabify(self, text):
 		resultsent = ''
 		words = re.split(r' ', text)
 		for word in words:
+			#remove interpunction
+			word = re.sub(r'[,:\.]', '', word)
 			syllabified = syllabify(word)
 			resultsent+=str(display_word(syllabified))
 			resultsent+=str(' ')
 			
 		return resultsent.rstrip(' ')
-	
+
+class annotator(object):
+
+	#count the number of syllables in the input verse
+	#based on syllabification performed by preprocessor class
+	def count_syllables(self, text):
+		return(len(re.findall(r'[\. ]', text))+1)
+		
+	def rule1(self, text, position):
+		text = re.split(r'[ \.]', text)
+		current = text[position]
+		return(re.search(r'[ηω]', current))
+		
+	def rule2(self, text, position):
+		text = re.split(r'[ \.]', text)
+		current = text[position]
+		return(re.search(r'(αι|οι|νι|ει|αν|εν|ον|ηι|ωι|ην)$', current))
+		
+	def rule3(self, text, position):
+		text = re.split(r'[ \.]', text)
+		current = text[position]
+		next = text[position+1]
+		return(re.match(r'(αι|οι|νι|ει|αν|εν|ον|ηι|ωι|ην)', next))
+		
 ####MAIN PROGRAM####	
 	
 infile = codecs.open(sys.argv[1], "r", "utf-8")
@@ -173,10 +203,37 @@ lines = infile.readlines()
 #get a preprocessor
 prep = preprocessor()
 
+#get an annotator
+ann = annotator()
+
 for line in lines:
+	scansion = ''
+	
 	vals = re.split(r'\t+', line.rstrip('\r?\n?'))
 	
+	#preprocessing
 	text = prep.normalise(vals[4])
-	result = prep.syllabify(text)
+	syllabified = prep.syllabify(text)
 	
-	print("{}\t{}\t{}".format(vals[0], vals[4], result), file=outfile)
+	#scansion annotation
+	syllable_count = ann.count_syllables(syllabified)
+	
+	if syllable_count == 12:
+		scansion = '-- -- -- -- -- -X'
+		
+	elif syllable_count == 13:
+		scansion = 'one daktylus must be found'
+		
+	elif syllable_count == 14:
+		scansion = 'two daktylus must be found'
+	
+	elif syllable_count == 15:
+		scansion = 'two spondees must be found'
+		
+	elif syllable_count == 16:
+		scansion = 'three spondees must be found'
+		
+	elif syllable_count == 17:
+		scansion = '-** -** -** -** -** -X'
+	
+	print("{}\t{}\t{}\t{}".format(vals[0], vals[4], syllabified, scansion), file=outfile)
