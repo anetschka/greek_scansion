@@ -140,10 +140,13 @@ class preprocessor(object):
 	
 		text = re.sub(r'ῥ', 'ρ', text)
 	
-		#remove quotes as they can lead to improper syllabification
+		#remove quotes as they can lead to incorrect syllabification
 		text = re.sub(r'"', '', text)
+		text = re.sub(r'„', '', text)
+		text = re.sub(r'“', '', text)
 		
-		return text
+		#finally, lower-case everything
+		return text.lower()
 		
 	def syllabify(self, text):
 		resultsent = ''
