@@ -194,6 +194,12 @@ class annotator(object):
 		next = text[position+1]
 		return(re.match(r'([βγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next))
 		
+	def muta(self, text, position):
+		text = re.split(r'[ \.]', text)
+		current = text[position]
+		next = text[position+1]
+		return(re.match(r'[βγδπτκφχθ][λρνμ]', next))
+		
 ####MAIN PROGRAM####	
 	
 infile = codecs.open(sys.argv[1], "r", "utf-8")
@@ -223,6 +229,7 @@ for line in lines:
 	
 	#scansion annotation
 	syllable_count = ann.count_syllables(syllabified)
+	print(ann.muta(text, 0))
 	
 	if syllable_count == 12:
 		scansion = '-- -- -- -- -- -X'
