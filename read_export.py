@@ -2,10 +2,10 @@ import re
 import sys
 import hfst
 import codecs
-#the general algorithm is implemented as finite-state machine
-import transitions
 #for random number generation
 from random import randint
+#the general algorithm is implemented as finite-state machine
+from transitions import Machine
 #for syllabification
 from greek_accentuation.syllabify import syllabify, display_word
 
@@ -180,13 +180,19 @@ class annotator(object):
 	def rule2(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
-		return(re.search(r'(αι|οι|νι|ει|αν|εν|ον|ηι|ωι|ην)$', current))
+		return(re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current))
 		
 	def rule3(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
 		next = text[position+1]
 		return(re.match(r'(αι|οι|νι|ει|αν|εν|ον|ηι|ωι|ην)', next))
+		
+	def rule4(self, text, position):
+		text = re.split(r'[ \.]', text)
+		current = text[position]
+		next = text[position+1]
+		return(re.match(r'([βγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next))
 		
 ####MAIN PROGRAM####	
 	
@@ -223,15 +229,19 @@ for line in lines:
 		
 	elif syllable_count == 13:
 		scansion = 'one daktylus must be found'
+		#make dedicated FSA
 		
 	elif syllable_count == 14:
 		scansion = 'two daktylus must be found'
+		#make dedicated FSA
 	
 	elif syllable_count == 15:
 		scansion = 'two spondees must be found'
+		#make dedicated FSA
 		
 	elif syllable_count == 16:
 		scansion = 'three spondees must be found'
+		#make dedicated FSA
 		
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
