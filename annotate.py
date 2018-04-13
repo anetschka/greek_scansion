@@ -165,40 +165,60 @@ class preprocessor(object):
 			
 		return resultsent.rstrip(' ')
 
-class annotator(object):
+class ruleset(object):
 
 	#count the number of syllables in the input verse
 	#based on syllabification performed by preprocessor class
 	def count_syllables(self, text):
 		return(len(re.findall(r'[\. ]', text))+1)
 		
+	#TODO: Formulierung der Regeln mit Pascal-Skript abgleichen
+		
+	#normally long
 	def rule1(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
-		return(re.search(r'[ηω]', current))
+		if re.search(r'[ηω]', current):
+			return True
 		
+	#normally long
 	def rule2(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
-		return(re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current))
+		if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
+			return True
 		
+	#normally long
 	def rule3(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
 		next = text[position+1]
-		return(re.match(r'(αι|οι|νι|ει|αν|εν|ον|ηι|ωι|ην)', next))
+		if re.match(r'^(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', next):
+			return True
 		
+	#normally long
 	def rule4(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
 		next = text[position+1]
-		return(re.match(r'([βγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next))
+		if re.match(r'([βγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
+			return True
 		
+	#muta cum liquida
 	def muta(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
 		next = text[position+1]
-		return(re.match(r'[βγδπτκφχθ][λρνμ]', next))
+		if re.match(r'[βγδπτκφχθ][λρνμ]', next):
+			return True
+		
+	#hiat
+	def hiat(self, text, position):
+		text = re.split(r'[ \.]', text)
+		current = text[position]
+		next = text[position+1]
+		if re.search(r'[αιουεωη]{1,2}', current) and re.match(r'[αιουεωη]{1,2}', next):
+			return True
 		
 ####MAIN PROGRAM####	
 	
@@ -215,8 +235,9 @@ lines = infile.readlines()
 #get a preprocessor
 prep = preprocessor()
 
-#get an annotator
-ann = annotator()
+#get an instance of the rule set
+##TODO: should be initialised by the automata in the constructor
+rules = ruleset()
 
 for line in lines:
 	scansion = ''
@@ -228,8 +249,9 @@ for line in lines:
 	syllabified = prep.syllabify(text)
 	
 	#scansion annotation
-	syllable_count = ann.count_syllables(syllabified)
-	print(ann.muta(text, 0))
+	#TODO: move to preprocessor
+	#TODO define class that is created by the preprocessor and contains its output
+	syllable_count = rules.count_syllables(syllabified)
 	
 	if syllable_count == 12:
 		scansion = '-- -- -- -- -- -X'
