@@ -166,9 +166,9 @@ outfile = codecs.open(sys.argv[2], "w", "utf-8")
 lines = infile.readlines()
 
 #get a verse selector: use this to select and process a random subset of verses
-#sel = selector()
-#selection = sel.select(lines, 1)
-#print(selection)
+##sel = selector()
+##selection = sel.select(lines, 1)
+##print(selection)
 
 #get a preprocessor
 prep = preprocessor()
@@ -179,4 +179,4 @@ for line in lines:
 	text = prep.normalise(vals[4])
 	result = prep.syllabify(text)
 	
-	print("{}\t{}\t{}\t{}\t{}\t{}".format(vals[0], vals[1], vals[2], vals[3], vals[4], result), file=outfile)
+	print("{}\t{}\t{}".format(vals[0], vals[4], result), file=outfile)
