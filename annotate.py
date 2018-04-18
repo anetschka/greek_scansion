@@ -1,5 +1,6 @@
 import re
 import sys
+#for finite-state transducer (fallback processing)
 import hfst
 import codecs
 #for random number generation
@@ -11,6 +12,7 @@ from greek_accentuation.syllabify import syllabify, display_word
 
 ####CLASS DEFINITIONS####
 
+#class for random selection of verses
 class selector(object):
 	
 	def __init__(self):
@@ -46,6 +48,7 @@ class selector(object):
 				
 		return resultlines
 
+#class for preprocessing
 class preprocessor(object):
 
 	#removes accents, lowercases
@@ -165,6 +168,7 @@ class preprocessor(object):
 			
 		return resultsent.rstrip(' ')
 
+#class containing linguistic rules
 class ruleset(object):
 
 	#count the number of syllables in the input verse
@@ -219,6 +223,113 @@ class ruleset(object):
 		next = text[position+1]
 		if re.search(r'[αιουεωη]{1,2}', current) and re.match(r'[αιουεωη]{1,2}', next):
 			return True
+
+#FSAs governing the application of rules
+class FSA13(object):
+
+	states = ['waiting', 'searching_for_daktylus', 'daktylus_found', 'daktylus_not_found', 'fallback']
+	
+	def __init__(self, name):
+		#name of the FSA
+		self.name = name
+		#status parameter
+		self.found = False
+		self.rules = ruleset()
+		#initialisation
+		self.machine = Machine(model=self, states=FSA13.states, initial='waiting')
+		
+		#transitions
+		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_daktylus')
+		self.machine.add_transition(trigger='search_daktylus', source='searching_for_daktylus', dest='daktylus_found', conditions=['is_found'])
+		self.machine.add_transition('search_daktylus', 'searching_for_daktylus', 'daktylus_not_found', unless=['is_found'])
+		self.machine.add_transition('success', 'daktylus_found', 'waiting')
+		self.machine.add_transition('failure', 'daktylus_not_found', 'fallback')
+		
+	def is_found():
+		return self.found
+	
+class FSA14(object):
+
+	states = ['waiting', 'searching_for_first_daktylus', 'searching_for_second_daktylus', 'no_daktylus_found', 'found_two_daktylus', 'fallback']
+	
+	def __init__(self, name):
+		self.name = name
+		self.found_first = False
+		self.found_second = False
+		self.rules = ruleset()
+		self.machine = Machine(model=self, states=FSA14.states, initial='waiting')
+		
+		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_daktylus')
+		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus', 'searching_for_second_daktylus', conditions=['is_found(1)'])
+		self.machine.add_transition('search daktylus', 'searching_for_first_daktylus', 'no_daktylus_found', unless=['is_found(1)'])
+		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'found_two_daktylus', conditions=['is_found(2)'])
+		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'no_daktylus_found', unless=['is_found(2)'])
+		self.machine.add_transition('success', 'found_two_daktylus', 'waiting')
+		self.machine.add_transition('failure', 'no_daktylus_found', 'fallback')
+		
+	def is_found(position):
+		if position == 1:
+			return self.found_first
+		else:
+			return self.found_second
+		#TODO: fallback (exception)
+	
+class FSA15(object):
+
+	states = ['waiting', 'searching_for_first_spondeus', 'searching_for_second_spondeus', 'no_spondeus_found', 'found_two_spondees', 'fallback']
+	
+	def __init__(self, name):
+		self.name = name
+		self.found_first = False
+		self.found_second = False
+		self.rules = ruleset()
+		self.machine = Machine(model=self, states=FSA15.states, initial='waiting')
+		
+		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus')
+		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'searching_for_second_spondeus', conditions=['is_found(1)'])
+		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'no_spondeus_found', unless=['is_found(1)'])
+		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'found_two_spondees', conditions=['is_found(2)'])
+		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'no_spondeus_found', unless=['is_found(2)'])
+		self.machine.add_transition('success', 'found_two_spondees', 'waiting')
+		self.machine.add_transition('failure', 'no_spondeus_found', 'fallback')
+		
+		
+	def is_found(position):
+		if position == 1:
+			return self.found_first
+		else:
+			return self.found_second
+		#TODO: fallback (exception)
+	
+class FSA16(object):
+
+	states = ['waiting', 'searching_for_first_spondeus', 'searching_for_second_spondeus', 'searching_for_third_spondeus', 'no_spondeus_found', 'found_three_spondees', 'fallback']
+	
+	def __init__(self, name):
+		self.name = name
+		self.found_first = False
+		self.found_second = False
+		self.found_third = False
+		self.rules = ruleset()
+		self.machine = Machine(model=self, states=FSA16.states, initial='waiting')
+		
+		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus')
+		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'searching_for_second_spondeus', conditions=['is_found(1)'])
+		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'no_spondeus_found', unless=['is_found(1)'])
+		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'found_two_spondees', conditions=['is_found(2)'])
+		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'no_spondeus_found', unless=['is_found(2)'])
+		#TODO: add transitions for third spondeus
+		self.machine.add_transition('success', 'found_two_spondees', 'waiting')
+		self.machine.add_transition('failure', 'no_spondeus_found', 'fallback')
+		
+	def is_found(position):
+		if position == 1:
+			return self.found_first
+		elif position == 2:
+			return self.found_second
+		else:
+			return self.found_third
+		#TODO: fallback (exception)
 		
 ####MAIN PROGRAM####	
 	
@@ -235,9 +346,14 @@ lines = infile.readlines()
 #get a preprocessor
 prep = preprocessor()
 
-#get an instance of the rule set
-##TODO: should be initialised by the automata in the constructor
+#TODO: remove completely when syllable counting is in preprocessing
 rules = ruleset()
+
+#make dedicated FSAs for processing lines with defferent syllable count
+fsa13 = FSA13('fsa13')
+fsa14 = FSA14('fsa14')
+fsa15 = FSA15('fsa15')
+fsa16 = FSA16('fsa16')
 
 for line in lines:
 	scansion = ''
@@ -258,21 +374,36 @@ for line in lines:
 		
 	elif syllable_count == 13:
 		scansion = 'one daktylus must be found'
-		#make dedicated FSA
+		fsa13.start_analysis()
+		
+		#reset automaton when processing is finished
+		if fsa13.state != 'waiting':
+			fsa13.to_waiting()
 		
 	elif syllable_count == 14:
 		scansion = 'two daktylus must be found'
-		#make dedicated FSA
+		fsa14.start_analysis()
+		
+		if fsa14.state != 'waiting':
+			fsa14.to_waiting()
 	
 	elif syllable_count == 15:
 		scansion = 'two spondees must be found'
-		#make dedicated FSA
+		fsa15.start_analysis()
+		
+		if fsa15.state != 'waiting':
+			fsa15.to_waiting()
 		
 	elif syllable_count == 16:
 		scansion = 'three spondees must be found'
-		#make dedicated FSA
+		fsa16.start_analysis()
+		
+		if fsa16.state != 'waiting':
+			fsa16.to_waiting()
 		
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
+	
+	#TODO: fallback bei absolut falscher silbenzahl
 	
 	print("{}\t{}\t{}\t{}".format(vals[0], vals[4], syllabified, scansion), file=outfile)
