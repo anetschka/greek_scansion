@@ -339,9 +339,9 @@ outfile = codecs.open(sys.argv[2], "w", "utf-8")
 lines = infile.readlines()
 
 #get a verse selector: use this to select and process a random subset of verses
-##sel = selector()
-##selection = sel.select(lines, 1)
-##print(selection)
+#sel = selector()
+#selection = sel.select(lines, 1)
+#print(selection, file = outfile)
 
 #get a preprocessor
 prep = preprocessor()
@@ -356,12 +356,13 @@ fsa15 = FSA15('fsa15')
 fsa16 = FSA16('fsa16')
 
 for line in lines:
+#for line in selection:
 	scansion = ''
 	
 	vals = re.split(r'\t+', line.rstrip('\r?\n?'))
 	
 	#preprocessing
-	text = prep.normalise(vals[4])
+	text = prep.normalise(vals[1])
 	syllabified = prep.syllabify(text)
 	
 	#scansion annotation
@@ -406,4 +407,4 @@ for line in lines:
 	
 	#TODO: fallback bei absolut falscher silbenzahl
 	
-	print("{}\t{}\t{}\t{}".format(vals[0], vals[4], syllabified, scansion), file=outfile)
+	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
