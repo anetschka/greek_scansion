@@ -155,27 +155,25 @@ class preprocessor(object):
 		#finally, lower-case everything
 		return text.lower()
 		
-	#syllabifies words, removes punctuation
-	def syllabify(self, text):
+	#syllabifies words, removes punctuation, using existing library
+	def simple_syllabify(self, text):
 		resultsent = ''
 		words = re.split(r' ', text)
 		for word in words:
-			#remove interpunction
+			#remove punctuation
 			word = re.sub(r'[,:\.]', '', word)
 			syllabified = syllabify(word)
 			resultsent+=str(display_word(syllabified))
 			resultsent+=str(' ')
 			
 		return resultsent.rstrip(' ')
-
-#class containing linguistic rules
-class ruleset(object):
-
+		
 	#count the number of syllables in the input verse
-	#based on syllabification performed by preprocessor class
 	def count_syllables(self, text):
 		return(len(re.findall(r'[\. ]', text))+1)
-		
+
+#class containing linguistic rules
+class ruleset(object):	
 	#TODO: Formulierung der Regeln mit Pascal-Skript abgleichen
 		
 	#normally long
@@ -270,9 +268,10 @@ class FSA14(object):
 	def is_found(position):
 		if position == 1:
 			return self.found_first
-		else:
+		elif position == 2:
 			return self.found_second
-		#TODO: fallback (exception)
+		else:
+			raise Exception("invalid position")
 	
 class FSA15(object):
 
@@ -297,9 +296,10 @@ class FSA15(object):
 	def is_found(position):
 		if position == 1:
 			return self.found_first
-		else:
+		elif position == 2:
 			return self.found_second
-		#TODO: fallback (exception)
+		else:
+			raise Exception("invalid position")
 	
 class FSA16(object):
 
@@ -316,10 +316,11 @@ class FSA16(object):
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'searching_for_second_spondeus', conditions=['is_found(1)'])
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'no_spondeus_found', unless=['is_found(1)'])
-		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'found_two_spondees', conditions=['is_found(2)'])
+		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'searching_for_third_spondeus', conditions=['is_found(2)'])
 		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'no_spondeus_found', unless=['is_found(2)'])
-		#TODO: add transitions for third spondeus
-		self.machine.add_transition('success', 'found_two_spondees', 'waiting')
+		self.machine.add_transition('search_third', 'searching_for_third_spondeus', 'found_three_spondees', conditions=['is_found(3)'])
+		self.machine.add_transition('search_third', 'searching_for_third_spondeus', 'no_spondeus_found', unless=['is_found(3)'])
+		self.machine.add_transition('success', 'found_three_spondees', 'waiting')
 		self.machine.add_transition('failure', 'no_spondeus_found', 'fallback')
 		
 	def is_found(position):
@@ -327,9 +328,10 @@ class FSA16(object):
 			return self.found_first
 		elif position == 2:
 			return self.found_second
+		elif position == 3:
+			return self.found_second
 		else:
-			return self.found_third
-		#TODO: fallback (exception)
+			raise Exception("invalid position")
 		
 ####MAIN PROGRAM####	
 	
@@ -346,14 +348,13 @@ lines = infile.readlines()
 #get a preprocessor
 prep = preprocessor()
 
-#TODO: remove completely when syllable counting is in preprocessing
-rules = ruleset()
-
 #make dedicated FSAs for processing lines with defferent syllable count
 fsa13 = FSA13('fsa13')
 fsa14 = FSA14('fsa14')
 fsa15 = FSA15('fsa15')
 fsa16 = FSA16('fsa16')
+
+counter = 0
 
 for line in lines:
 #for line in selection:
@@ -363,12 +364,10 @@ for line in lines:
 	
 	#preprocessing
 	text = prep.normalise(vals[1])
-	syllabified = prep.syllabify(text)
+	syllabified = prep.simple_syllabify(text)
 	
 	#scansion annotation
-	#TODO: move to preprocessor
-	#TODO define class that is created by the preprocessor and contains its output
-	syllable_count = rules.count_syllables(syllabified)
+	syllable_count = prep.count_syllables(syllabified)
 	
 	if syllable_count == 12:
 		scansion = '-- -- -- -- -- -X'
@@ -405,6 +404,12 @@ for line in lines:
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
 	
-	#TODO: fallback bei absolut falscher silbenzahl
+	else:
+		print("WARNING: Incorrect syllable count: " + vals[0])
+		counter += 1
 	
 	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
+	
+print(counter, " incorrectly syllabified verses")
+#TODO: check whether other syllabification produces better result
+#TODO: check how many verses in corpus consist of only one word
