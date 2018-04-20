@@ -168,13 +168,24 @@ class preprocessor(object):
 			
 		return resultsent.rstrip(' ')
 		
+	#syllabifies words, removes punctuation, using a simple rule
+	def vowel_syllabify(self, text):
+		resultsent = ''
+		words = re.split(r' ', text)
+		pattern = re.compile(r'([αιουεηω])')
+		for word in words:
+			syllabified = pattern.sub('\\1.', word)
+			resultsent+=syllabified.rstrip('\.')
+			resultsent+=str(' ')
+		
+		return resultsent.rstrip(' ')
+		
 	#count the number of syllables in the input verse
 	def count_syllables(self, text):
 		return(len(re.findall(r'[\. ]', text))+1)
 
 #class containing linguistic rules
 class ruleset(object):	
-	#TODO: Formulierung der Regeln mit Pascal-Skript abgleichen
 		
 	#normally long
 	def rule1(self, text, position):
@@ -362,6 +373,7 @@ for line in lines:
 	#preprocessing
 	text = prep.normalise(vals[1])
 	syllabified = prep.simple_syllabify(text)
+	#syllabified = prep.vowel_syllabify(text)
 	syllable_count = prep.count_syllables(syllabified)
 	
 	#scansion annotation
