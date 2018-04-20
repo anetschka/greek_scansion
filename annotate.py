@@ -213,6 +213,10 @@ class preprocessor(object):
 	#count the number of syllables in the input verse
 	def count_syllables(self, text):
 		return(len(re.findall(r'[\. ]', text))+1)
+		
+	#find out whether text is very short (not enough syllables)
+	def find_spurious_verse(self, text):
+		return(len(re.findall(r' ', text))+1)
 
 #class containing linguistic rules
 class ruleset(object):	
@@ -288,7 +292,7 @@ class FSA13(object):
 	
 class FSA14(object):
 
-	states = ['waiting', 'searching_for_first_daktylus', 'searching_for_second_daktylus', 'no_daktylus_found', 'found_two_daktylus', 'fallback']
+	states = ['waiting', 'searching_for_first_daktylus', 'searching_for_second_daktylus', 'no_daktyles_found', 'found_two_daktylus', 'fallback']
 	
 	def __init__(self, name):
 		self.name = name
@@ -299,9 +303,9 @@ class FSA14(object):
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_daktylus')
 		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus', 'searching_for_second_daktylus', conditions=['is_found(1)'])
-		self.machine.add_transition('search daktylus', 'searching_for_first_daktylus', 'no_daktylus_found', unless=['is_found(1)'])
+		self.machine.add_transition('search daktylus', 'searching_for_first_daktylus', 'no_daktyles_found', unless=['is_found(1)'])
 		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'found_two_daktylus', conditions=['is_found(2)'])
-		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'no_daktylus_found', unless=['is_found(2)'])
+		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'no_daktyles_found', unless=['is_found(2)'])
 		self.machine.add_transition('failure', 'no_daktylus_found', 'fallback')
 		
 	def is_found(position):
@@ -392,7 +396,9 @@ fsa15 = FSA15('fsa15')
 fsa16 = FSA16('fsa16')
 
 #only for tracking number of lines with obviously erroneous syllabification
-counter = 0
+syll_counter = 0
+#only for tracking number of short lines
+short_counter = 0
 
 for line in lines:
 #for line in selection:
@@ -402,6 +408,9 @@ for line in lines:
 	
 	#preprocessing
 	text = prep.normalise(vals[1])
+	#signal very short verses
+	if prep.find_spurious_verse(text) < 3:
+		short_counter+=1
 	syllabified = prep.simple_syllabify(text)
 	#syllabified = prep.vowel_syllabify(text)
 	#syllabified = prep.cltk_syllabify(text)
@@ -419,7 +428,7 @@ for line in lines:
 		fsa13.start_analysis()
 		
 	elif syllable_count == 14:
-		scansion = 'two daktylus must be found'
+		scansion = 'two daktyles must be found'
 		if fsa14.state != 'waiting':
 			fsa14.to_waiting()
 		fsa14.start_analysis()
@@ -441,11 +450,11 @@ for line in lines:
 	
 	else:
 		print("WARNING: Incorrect syllable count: " + vals[0])
-		counter += 1
+		syll_counter += 1
 	
 	#output
 	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
 
 #log	
-print(counter, " incorrectly syllabified verses")
-#TODO: check how many verses in corpus consist of only one word
+print(syll_counter, " incorrectly syllabified verses")
+print(short_counter, " short verses")
