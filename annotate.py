@@ -7,7 +7,7 @@ import codecs
 from random import randint
 #the general algorithm is implemented as finite-state machine
 from transitions import Machine
-#for syllabification
+#for simple syllabification (baseline)
 from greek_accentuation.syllabify import syllabify, display_word
 
 ####CLASS DEFINITIONS####
@@ -240,7 +240,6 @@ class FSA13(object):
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_daktylus')
 		self.machine.add_transition(trigger='search_daktylus', source='searching_for_daktylus', dest='daktylus_found', conditions=['is_found'])
 		self.machine.add_transition('search_daktylus', 'searching_for_daktylus', 'daktylus_not_found', unless=['is_found'])
-		self.machine.add_transition('success', 'daktylus_found', 'waiting')
 		self.machine.add_transition('failure', 'daktylus_not_found', 'fallback')
 		
 	def is_found():
@@ -262,7 +261,6 @@ class FSA14(object):
 		self.machine.add_transition('search daktylus', 'searching_for_first_daktylus', 'no_daktylus_found', unless=['is_found(1)'])
 		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'found_two_daktylus', conditions=['is_found(2)'])
 		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'no_daktylus_found', unless=['is_found(2)'])
-		self.machine.add_transition('success', 'found_two_daktylus', 'waiting')
 		self.machine.add_transition('failure', 'no_daktylus_found', 'fallback')
 		
 	def is_found(position):
@@ -289,7 +287,6 @@ class FSA15(object):
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'no_spondeus_found', unless=['is_found(1)'])
 		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'found_two_spondees', conditions=['is_found(2)'])
 		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'no_spondeus_found', unless=['is_found(2)'])
-		self.machine.add_transition('success', 'found_two_spondees', 'waiting')
 		self.machine.add_transition('failure', 'no_spondeus_found', 'fallback')
 		
 		
@@ -320,7 +317,6 @@ class FSA16(object):
 		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'no_spondeus_found', unless=['is_found(2)'])
 		self.machine.add_transition('search_third', 'searching_for_third_spondeus', 'found_three_spondees', conditions=['is_found(3)'])
 		self.machine.add_transition('search_third', 'searching_for_third_spondeus', 'no_spondeus_found', unless=['is_found(3)'])
-		self.machine.add_transition('success', 'found_three_spondees', 'waiting')
 		self.machine.add_transition('failure', 'no_spondeus_found', 'fallback')
 		
 	def is_found(position):
@@ -348,12 +344,13 @@ lines = infile.readlines()
 #get a preprocessor
 prep = preprocessor()
 
-#make dedicated FSAs for processing lines with defferent syllable count
+#make dedicated FSAs for processing lines with different syllable count
 fsa13 = FSA13('fsa13')
 fsa14 = FSA14('fsa14')
 fsa15 = FSA15('fsa15')
 fsa16 = FSA16('fsa16')
 
+#only for tracking number of lines with obviously erroneous syllabification
 counter = 0
 
 for line in lines:
@@ -365,41 +362,36 @@ for line in lines:
 	#preprocessing
 	text = prep.normalise(vals[1])
 	syllabified = prep.simple_syllabify(text)
-	
-	#scansion annotation
 	syllable_count = prep.count_syllables(syllabified)
 	
+	#scansion annotation
 	if syllable_count == 12:
 		scansion = '-- -- -- -- -- -X'
 		
 	elif syllable_count == 13:
 		scansion = 'one daktylus must be found'
-		fsa13.start_analysis()
-		
 		#reset automaton when processing is finished
 		if fsa13.state != 'waiting':
 			fsa13.to_waiting()
+		fsa13.start_analysis()
 		
 	elif syllable_count == 14:
 		scansion = 'two daktylus must be found'
-		fsa14.start_analysis()
-		
 		if fsa14.state != 'waiting':
 			fsa14.to_waiting()
+		fsa14.start_analysis()
 	
 	elif syllable_count == 15:
 		scansion = 'two spondees must be found'
-		fsa15.start_analysis()
-		
 		if fsa15.state != 'waiting':
 			fsa15.to_waiting()
+		fsa15.start_analysis()
 		
 	elif syllable_count == 16:
 		scansion = 'three spondees must be found'
-		fsa16.start_analysis()
-		
 		if fsa16.state != 'waiting':
 			fsa16.to_waiting()
+		fsa16.start_analysis()
 		
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
@@ -408,8 +400,10 @@ for line in lines:
 		print("WARNING: Incorrect syllable count: " + vals[0])
 		counter += 1
 	
+	#output
 	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
-	
+
+#log	
 print(counter, " incorrectly syllabified verses")
 #TODO: check whether other syllabification produces better result
 #TODO: check how many verses in corpus consist of only one word
