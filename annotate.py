@@ -180,6 +180,36 @@ class preprocessor(object):
 		
 		return resultsent.rstrip(' ')
 		
+	#syllabifies words, removes punctuation, re-implementing CLTK rules
+	#https://github.com/cltk/cltk/blob/master/cltk/prosody/greek/scanner.py
+	def cltk_syllabify(self,text):
+		resultsent = ''
+		words = re.split(r' ', text)
+		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
+		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
+		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
+		for word in words:
+			syllabified = ''
+			letters = list(word)
+			counter = 0
+			for letter in letters:
+				syllabified+=letter
+				if letter in vowels:
+					#consonant in end belongs to last syllable
+					if (counter == len(letters)-2) and \
+					(letters[counter+1] in consonants):
+						continue
+					#not last letter
+					if (counter < len(letters)-1) and \
+					(letter + letters[counter+1] not in diphtongs): #don't separate diphtong
+						syllabified+='.'
+				counter+=1
+			
+			resultsent+=syllabified
+			resultsent+=str(' ')
+		
+		return resultsent.rstrip(' ')
+		
 	#count the number of syllables in the input verse
 	def count_syllables(self, text):
 		return(len(re.findall(r'[\. ]', text))+1)
@@ -214,7 +244,7 @@ class ruleset(object):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
 		next = text[position+1]
-		if re.match(r'([βγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
+		if re.match(r'([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
 			return True
 		
 	#muta cum liquida
@@ -374,6 +404,7 @@ for line in lines:
 	text = prep.normalise(vals[1])
 	syllabified = prep.simple_syllabify(text)
 	#syllabified = prep.vowel_syllabify(text)
+	#syllabified = prep.cltk_syllabify(text)
 	syllable_count = prep.count_syllables(syllabified)
 	
 	#scansion annotation
@@ -417,5 +448,4 @@ for line in lines:
 
 #log	
 print(counter, " incorrectly syllabified verses")
-#TODO: check whether other syllabification produces better result
 #TODO: check how many verses in corpus consist of only one word
