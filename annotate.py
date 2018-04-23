@@ -320,38 +320,30 @@ class FSA13(object):
 		
 		#transitions
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_daktylus')
-		self.machine.add_transition('failure', 'daktylus_not_found', 'fallback')
+		self.machine.add_transition('found_daktylus', 'searching_for_daktylus', 'daktylus_found')
+		self.machine.add_transition('not_found', 'searching_for_daktylus', 'daktylus_not_found')
+		self.machine.add_transition('fallback_analysis', 'daktylus_not_found', 'fallback')
 			
 	def search_daktylus(self):
 		if self.search(10):
 			self.scansion = '-- -- -- -- -** -X'
-			self.to_daktylus_found()
 		elif self.search(6):
 			self.scansion = '-- -- -** -- -- -X'
-			self.to_daktylus_found()
 		elif self.search(8):
 			self.scansion = '-- -- -- -** -- -X'
-			self.to_daktylus_found()
 		elif self.search(2):
 			self.scansion = '-** -- -- -- -- -X'
-			self.to_daktylus_found()
 		elif self.search(4):
 			self.scansion = '-- -** -- -- -- -X'
-			self.to_daktylus_found()
-		else:	
-			self.to_daktylus_not_found()
 	
 	def reset_found(self):
 		self.found = False
 	
-	def is_found(self):
-		return self.found
-		
 	def set_text(self, text):
 		self.text = text
 		
 	def search(self, position):
-		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position):
+		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
 			return True
 	
 class FSA14(object):
@@ -491,10 +483,12 @@ for line in lines:
 			fsa13.to_waiting()
 		fsa13.set_text(syllabified)
 		fsa13.start_analysis()
-		if(fsa13.state == 'daktylus_not_found'):
-			fsa13.failure()
-		else:
+		if(fsa13.scansion):
+			fsa13.found_daktylus()
 			scansion = fsa13.scansion
+		else:
+			print('not found, fallback required')
+			fsa13.not_found()
 		
 	elif syllable_count == 14:
 		scansion = 'two daktyles must be found'
