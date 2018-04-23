@@ -295,7 +295,7 @@ class ruleset(object):
 		text = re.split(r'[ \.]', text)
 		current = text[position-1]
 		next = text[position]
-		if re.search(r'[αιουεωη]{1,2}', current) and re.match(r'[αιουεωη]{1,2}', next):
+		if re.search(r'[αιουεωη]{1,*}', current) and re.match(r'[αιουεωη]{1,*}', next):
 			return True
 
 #FSAs governing the application of rules
@@ -327,14 +327,20 @@ class FSA13(object):
 	def search_daktylus(self):
 		if self.search(10):
 			self.scansion = '-- -- -- -- -** -X'
+			#solution found, no need to execute the rest
+			return
 		elif self.search(6):
 			self.scansion = '-- -- -** -- -- -X'
+			return
 		elif self.search(8):
 			self.scansion = '-- -- -- -** -- -X'
+			return
 		elif self.search(2):
 			self.scansion = '-** -- -- -- -- -X'
+			return
 		elif self.search(4):
 			self.scansion = '-- -** -- -- -- -X'
+			return
 	
 	def reset_found(self):
 		self.found = False
