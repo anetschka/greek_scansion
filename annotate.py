@@ -257,14 +257,14 @@ class ruleset(object):
 	#long by nature
 	def rule1(self, text, position):
 		text = re.split(r'[ \.]', text)
-		current = text[position]
+		current = text[position-1]
 		if re.search(r'[ηω]', current):
 			return True
 		
 	#long by nature
 	def rule2(self, text, position):
 		text = re.split(r'[ \.]', text)
-		current = text[position]
+		current = text[position-1]
 		#if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
 		if re.search(r'(υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
 			return True
@@ -272,58 +272,87 @@ class ruleset(object):
 	#long by position
 	def rule3(self, text, position):
 		text = re.split(r'[ \.]', text)
-		next = text[position+1]
+		next = text[position]
 		if re.match(r'^(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', next):
 			return True
 		
 	#long by position
 	def rule4(self, text, position):
 		text = re.split(r'[ \.]', text)
-		next = text[position+1]
+		next = text[position]
 		if re.match(r'([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
 			return True
 		
 	#muta cum liquida
 	def muta(self, text, position):
 		text = re.split(r'[ \.]', text)
-		next = text[position+1]
+		next = text[position]
 		if re.match(r'[βγδπτκφχθ][λρνμ]', next):
 			return True
 		
 	#hiat
 	def hiat(self, text, position):
 		text = re.split(r'[ \.]', text)
-		current = text[position]
-		next = text[position+1]
+		current = text[position-1]
+		next = text[position]
 		if re.search(r'[αιουεωη]{1,2}', current) and re.match(r'[αιουεωη]{1,2}', next):
 			return True
 
 #FSAs governing the application of rules
 @add_state_features(Tags)
 class CustomStateMachine(Machine):
-    pass
-
+	pass
+	
 class FSA13(object):
 
-	states = ['waiting', 'searching_for_daktylus', {'name': 'daktylus_found', 'tags': 'accepted'}, 'daktylus_not_found', 'fallback']
+	states = [{'name': 'waiting', 'on_enter': 'reset_found'}, {'name': 'searching_for_daktylus', 'on_enter': 'search_daktylus'}, {'name': 'daktylus_found', 'tags': 'accepted'}, 'daktylus_not_found', 'fallback']
 	
 	def __init__(self, name):
 		#name of the FSA
 		self.name = name
-		#status parameter
-		self.found = False
 		self.rules = ruleset()
+		#text to be analyed
+		self.text = ''
+		#resulting scansion
+		self.scansion = ''
 		#initialisation
 		self.machine = CustomStateMachine(model=self, states=FSA13.states, initial='waiting')
 		
 		#transitions
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_daktylus')
-		self.machine.add_transition(trigger='search_daktylus', source='searching_for_daktylus', dest='daktylus_found', conditions=['is_found()'])
-		self.machine.add_transition('search_daktylus', 'searching_for_daktylus', 'daktylus_not_found', unless=['is_found()'])
 		self.machine.add_transition('failure', 'daktylus_not_found', 'fallback')
-		
-	def is_found():
+			
+	def search_daktylus(self):
+		if self.search(10):
+			self.scansion = '-- -- -- -- -** -X'
+			self.to_daktylus_found()
+		elif self.search(6):
+			self.scansion = '-- -- -** -- -- -X'
+			self.to_daktylus_found()
+		elif self.search(8):
+			self.scansion = '-- -- -- -** -- -X'
+			self.to_daktylus_found()
+		elif self.search(2):
+			self.scansion = '-** -- -- -- -- -X'
+			self.to_daktylus_found()
+		elif self.search(4):
+			self.scansion = '-- -** -- -- -- -X'
+			self.to_daktylus_found()
+		else:	
+			self.to_daktylus_not_found()
+	
+	def reset_found(self):
+		self.found = False
+	
+	def is_found(self):
 		return self.found
+		
+	def set_text(self, text):
+		self.text = text
+		
+	def search(self, position):
+		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position):
+			return True
 	
 class FSA14(object):
 
@@ -334,6 +363,7 @@ class FSA14(object):
 		self.found_first = False
 		self.found_second = False
 		self.rules = ruleset()
+		self.text = ''
 		self.machine = CustomStateMachine(model=self, states=FSA14.states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_daktylus')
@@ -343,7 +373,7 @@ class FSA14(object):
 		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'no_daktylus_found', unless=['is_found(2)'])
 		self.machine.add_transition('failure', 'no_daktylus_found', 'fallback')
 		
-	def is_found(position):
+	def is_found(self, position):
 		if position == 1:
 			return self.found_first
 		elif position == 2:
@@ -351,9 +381,8 @@ class FSA14(object):
 		else:
 			raise Exception("invalid position")
 			
-	#fünfter und dritter fuß haben meist einen daktylus (dann 4,1,2)
-	#suchreihenfolge für spondeus umgekehrt
-	#decide whether the foot is dactylic or not
+	def set_text(self, text):
+		self.text = text
 	
 class FSA15(object):
 
@@ -364,6 +393,7 @@ class FSA15(object):
 		self.found_first = False
 		self.found_second = False
 		self.rules = ruleset()
+		self.text = ''
 		self.machine = CustomStateMachine(model=self, states=FSA15.states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus')
@@ -374,13 +404,16 @@ class FSA15(object):
 		self.machine.add_transition('failure', 'no_spondeus_found', 'fallback')
 		
 		
-	def is_found(position):
+	def is_found(self, position):
 		if position == 1:
 			return self.found_first
 		elif position == 2:
 			return self.found_second
 		else:
 			raise Exception("invalid position")
+	
+	def set_text(self, text):
+		self.text = text
 	
 class FSA16(object):
 	states = ['waiting', 'searching_for_spondeus', {'name': 'spondeus_found', 'tags': 'accepted'}, 'spondeus_not_found', 'fallback']
@@ -389,6 +422,7 @@ class FSA16(object):
 		self.name = name
 		self.found = False
 		self.rules = ruleset()
+		self.text = ''
 		self.machine = CustomStateMachine(model=self, states=FSA16.states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_spondeus')
@@ -396,8 +430,11 @@ class FSA16(object):
 		self.machine.add_transition('search_spondeus', 'searching_for_spondeus', 'spondeus_not_found', unless=['is_found()'])
 		self.machine.add_transition('failure', 'spondeus_not_found', 'fallback')
 		
-	def is_found():
+	def is_found(self):
 		return self.found
+		
+	def set_text(self, text):
+		self.text = text
 		
 ####MAIN PROGRAM####	
 	
@@ -437,9 +474,9 @@ for line in lines:
 	if prep.find_spurious_verse(text) < 3:
 		short_counter+=1
 	#selection of functions for syllabification
-	#syllabified = prep.simple_syllabify(text)
-	#syllabified = prep.vowel_syllabify(text)
-	#syllabified = prep.cltk_syllabify(text)
+	##syllabified = prep.simple_syllabify(text)
+	##syllabified = prep.vowel_syllabify(text)
+	##syllabified = prep.cltk_syllabify(text)
 	syllabified = prep.papakitsos_syllabify(text)
 	syllable_count = prep.count_syllables(syllabified)
 	
@@ -452,7 +489,12 @@ for line in lines:
 		#reset automaton when processing is finished
 		if fsa13.state != 'waiting':
 			fsa13.to_waiting()
+		fsa13.set_text(syllabified)
 		fsa13.start_analysis()
+		if(fsa13.state == 'daktylus_not_found'):
+			fsa13.failure()
+		else:
+			scansion = fsa13.scansion
 		
 	elif syllable_count == 14:
 		scansion = 'two daktyles must be found'
@@ -467,7 +509,7 @@ for line in lines:
 		fsa15.start_analysis()
 		
 	elif syllable_count == 16:
-		scansion = 'three spondees must be found'
+		scansion = 'one spondeus must be found'
 		if fsa16.state != 'waiting':
 			fsa16.to_waiting()
 		fsa16.start_analysis()
@@ -475,13 +517,13 @@ for line in lines:
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
 	
-	else:
-		print("WARNING: Incorrect syllable count: " + vals[0])
-		syll_counter += 1
+	#else:
+		#print("WARNING: Incorrect syllable count: " + vals[0])
+		#syll_counter += 1
 	
 	#output
 	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
 
 #log	
-print(syll_counter, " incorrectly syllabified verses")
-print(short_counter, " short verses")
+#print(syll_counter, " incorrectly syllabified verses")
+#print(short_counter, " short verses")
