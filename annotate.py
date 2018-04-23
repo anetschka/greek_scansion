@@ -2,7 +2,6 @@ import re
 import sys
 #for finite-state transducer (fallback processing)
 import hfst
-import numpy
 import codecs
 #for random number generation
 from random import randint
@@ -358,7 +357,7 @@ class FSA14(object):
 		self.rules = ruleset()
 		self.text = ''
 		self.scansion = ''
-		self.positions = numpy.empty(2, dtype=int)
+		self.positions = [0, 0]
 		self.machine = CustomStateMachine(model=self, states=FSA14.states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_daktylus')
@@ -386,9 +385,28 @@ class FSA14(object):
 		else:
 			#search failed, passing into no_daktylus_found
 			self.search_first_daktylus()
-			
+	
 	def search_second(self):
-		if self.positions[0] != 3:
+		#second daktylus must be in second foot
+		if 1 in self.positions:
+			if self.search(4):
+				self.positions[1] = 2
+				self.search_second_daktylus()
+			#error
+			else:
+				self.search_second_daktylus()
+		#daktylus must be in first or second foot
+		elif 4 in self.positions:
+			if self.search(2):
+				self.positions[1] = 1
+				self.search_second_daktylus()
+			elif self.search(4):
+				self.positions[1] = 2
+				self.search_second_daktylus()
+			else:
+				self.search_second_daktylus()
+		#daktylus must be in fourth, first, or second foot
+		elif 3 in self.positions:
 			if self.search(8):
 				self.positions[1] = 4
 				self.search_second_daktylus()
@@ -400,8 +418,15 @@ class FSA14(object):
 				self.search_second_daktylus()
 			else:
 				self.search_second_daktylus()
-		elif self.positions[0] != 4:
-			if self.search(2):
+		#daktylus can be in any but the fifth foot
+		elif 5 in self.positions:
+			if self.search(6):
+				self.positions[1] = 3
+				self.search_second_daktylus()
+			elif self.search(8):
+				self.positions[1] = 4
+				self.search_second_daktylus()
+			elif self.search(2):
 				self.positions[1] = 1
 				self.search_second_daktylus()
 			elif self.search(4):
@@ -409,22 +434,9 @@ class FSA14(object):
 				self.search_second_daktylus()
 			else:
 				self.search_second_daktylus()
-		elif self.search(4):
-			self.positions[1] = 2
-			self.search_second_daktylus()
 		else:
-			if self.search(6):
-				self.positions[0] = 3
-				self.search_first_daktylus()
-			elif self.search(8):
-				self.positions[0] = 4
-				self.search_first_daktylus()
-			elif self.search(2):
-				self.positions[0] = 1
-				self.search_first_daktylus()
-			else:
-				self.search_second_daktylus()
-	
+			self.search_second_daktylus()
+				
 	def set_text(self, text):
 		self.text = text
 		
@@ -433,23 +445,23 @@ class FSA14(object):
 			return True
 	
 	def first_found(self):
-		if self.positions[0]:
+		if self.positions[0] > 0:
 			return True
 		else:
 			return False
 			
 	def second_found(self):
-		if self.positions[1]:
+		if self.positions[1] > 0:
 			return True
 		else:
 			return False
 			
-	def reset_positions(self):
-		self.positions = numpy.empty(2, dtype=int)
+	def reset_positions(self):		
+		self.positions = [0, 0]
 		
 	def make_scansion(self):
 		if 1 in self.positions:
-			self.scansion = '-**'
+			self.scansion = '-** '
 			if 2 in self.positions:
 				self.scansion+='-** -- -- -- -X'
 				return
@@ -463,7 +475,7 @@ class FSA14(object):
 				self.scansion+='-- -- -- -** -X'
 				return
 		elif 2 in self.positions:
-			self.scansion = '-- -**'
+			self.scansion = '-- -** '
 			if 3 in self.positions:
 				self.scansion+='-** -- -- -X'
 				return				
@@ -474,7 +486,7 @@ class FSA14(object):
 				self.scansion+='-- -- -** -X'
 				return
 		elif 3 in self.positions:
-			self.scansion = '-- -- -**'
+			self.scansion = '-- -- -** '
 			if 4 in self.positions:
 				self.scansion+='-** -- -X'
 				return
