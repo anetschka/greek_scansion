@@ -174,6 +174,7 @@ class preprocessor(object):
 		words = re.split(r' ', text)
 		pattern = re.compile(r'([αιουεηω])')
 		for word in words:
+			word = re.sub(r'[,:\.]', '', word)
 			syllabified = pattern.sub('\\1.', word)
 			resultsent+=syllabified.rstrip('\.')
 			resultsent+=str(' ')
@@ -189,6 +190,7 @@ class preprocessor(object):
 		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		for word in words:
+			word = re.sub(r'[,:\.]', '', word)
 			syllabified = ''
 			letters = list(word)
 			counter = 0
@@ -210,6 +212,36 @@ class preprocessor(object):
 		
 		return resultsent.rstrip(' ')
 		
+	#syllabifies words, removes punctuation, following the article by Papakitsos, E: "Computerized scansion of Ancient Greek Hexameter"
+	def papakitsos_syllabify(self, text):
+		resultsent = ''
+		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
+		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
+		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
+		clusters = ['βδ', 'βλ', 'βρ', 'γδ', 'γλ', 'γμ', 'γν', 'γρ', 'δμ', 'δν', 'δρ', 'θλ', 'θμ', 'θν', 'θρ', 'κλ', 'κμ', 'κν', 'κρ', 'κτ', 'μν', 'πλ', 'πν', 'πρ', 'πτ', 'σβ', 'σγ', 'σθ', 'σκ', 'σμ', 'σπ', 'στ', 'σφ', 'σχ', 'τλ', 'τμ', 'τν', 'τρ', 'φθ', 'φλ', 'φν', 'φρ', 'χθ', 'χλ', 'χμ', 'χν', 'χρ']
+		cleaned = re.sub(r'[,:\.]', '', text)
+		letters = list(cleaned)
+		syllabified = ''
+		for index in range(0, len(letters)):
+			#first and last letter letter
+			if index == 0 or index == len(letters):
+				syllabified+=letters[index]
+			#consonant between vowels
+			elif index > 0 and index < len(letters)-1 and letters[index] in consonants and letters[index-1] in vowels and letters[index+1] in vowels:
+				syllabified+='.'
+				syllabified+=letters[index]
+			elif index < len(letters)-2 and letters[index] in vowels and (letters[index+1] + letters[index+2] in clusters):
+				syllabified+=letters[index]
+				syllabified+='.'
+			elif index < len(letters)-1 and letters[index-1] in vowels and letters[index] in consonants and letters[index+1] in consonants and (letters[index] + letters[index+1] not in clusters):
+				syllabified+=letters[index]
+				syllabified+='.'
+			else:
+				syllabified+=letters[index]
+		resultsent+=syllabified	
+		
+		return resultsent
+		
 	#count the number of syllables in the input verse
 	def count_syllables(self, text):
 		return(len(re.findall(r'[\. ]', text))+1)
@@ -221,32 +253,31 @@ class preprocessor(object):
 #class containing linguistic rules
 class ruleset(object):	
 		
-	#normally long
+	#long by nature
 	def rule1(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
 		if re.search(r'[ηω]', current):
 			return True
 		
-	#normally long
+	#long by nature
 	def rule2(self, text, position):
 		text = re.split(r'[ \.]', text)
 		current = text[position]
-		if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
+		#if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
+		if re.search(r'(υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
 			return True
 		
-	#normally long
+	#long by position
 	def rule3(self, text, position):
 		text = re.split(r'[ \.]', text)
-		current = text[position]
 		next = text[position+1]
 		if re.match(r'^(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', next):
 			return True
 		
-	#normally long
+	#long by position
 	def rule4(self, text, position):
 		text = re.split(r'[ \.]', text)
-		current = text[position]
 		next = text[position+1]
 		if re.match(r'([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
 			return True
@@ -254,7 +285,6 @@ class ruleset(object):
 	#muta cum liquida
 	def muta(self, text, position):
 		text = re.split(r'[ \.]', text)
-		current = text[position]
 		next = text[position+1]
 		if re.match(r'[βγδπτκφχθ][λρνμ]', next):
 			return True
@@ -315,6 +345,10 @@ class FSA14(object):
 			return self.found_second
 		else:
 			raise Exception("invalid position")
+			
+	#fünfter und dritter fuß haben meist einen daktylus (dann 4,1,2)
+	#suchreihenfolge für spondeus umgekehrt
+	#decide whether the foot is dactylic or not
 	
 class FSA15(object):
 
@@ -344,7 +378,7 @@ class FSA15(object):
 			raise Exception("invalid position")
 	
 class FSA16(object):
-
+#TODO: redesign automaton: looking for one spondee
 	states = ['waiting', 'searching_for_first_spondeus', 'searching_for_second_spondeus', 'searching_for_third_spondeus', 'no_spondeus_found', 'found_three_spondees', 'fallback']
 	
 	def __init__(self, name):
@@ -411,9 +445,11 @@ for line in lines:
 	#signal very short verses
 	if prep.find_spurious_verse(text) < 3:
 		short_counter+=1
-	syllabified = prep.simple_syllabify(text)
+	#selection of functions for syllabification
+	#syllabified = prep.simple_syllabify(text)
 	#syllabified = prep.vowel_syllabify(text)
 	#syllabified = prep.cltk_syllabify(text)
+	syllabified = prep.papakitsos_syllabify(text)
 	syllable_count = prep.count_syllables(syllabified)
 	
 	#scansion annotation
