@@ -7,6 +7,7 @@ import codecs
 from random import randint
 #the general algorithm is implemented as finite-state machine
 from transitions import Machine
+from transitions.extensions.states import add_state_features, Tags
 #for simple syllabification (baseline)
 from greek_accentuation.syllabify import syllabify, display_word
 
@@ -298,9 +299,13 @@ class ruleset(object):
 			return True
 
 #FSAs governing the application of rules
+@add_state_features(Tags)
+class CustomStateMachine(Machine):
+    pass
+
 class FSA13(object):
 
-	states = ['waiting', 'searching_for_daktylus', 'daktylus_found', 'daktylus_not_found', 'fallback']
+	states = ['waiting', 'searching_for_daktylus', {'name': 'daktylus_found', 'tags': 'accepted'}, 'daktylus_not_found', 'fallback']
 	
 	def __init__(self, name):
 		#name of the FSA
@@ -309,12 +314,12 @@ class FSA13(object):
 		self.found = False
 		self.rules = ruleset()
 		#initialisation
-		self.machine = Machine(model=self, states=FSA13.states, initial='waiting')
+		self.machine = CustomStateMachine(model=self, states=FSA13.states, initial='waiting')
 		
 		#transitions
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_daktylus')
-		self.machine.add_transition(trigger='search_daktylus', source='searching_for_daktylus', dest='daktylus_found', conditions=['is_found'])
-		self.machine.add_transition('search_daktylus', 'searching_for_daktylus', 'daktylus_not_found', unless=['is_found'])
+		self.machine.add_transition(trigger='search_daktylus', source='searching_for_daktylus', dest='daktylus_found', conditions=['is_found()'])
+		self.machine.add_transition('search_daktylus', 'searching_for_daktylus', 'daktylus_not_found', unless=['is_found()'])
 		self.machine.add_transition('failure', 'daktylus_not_found', 'fallback')
 		
 	def is_found():
@@ -322,20 +327,20 @@ class FSA13(object):
 	
 class FSA14(object):
 
-	states = ['waiting', 'searching_for_first_daktylus', 'searching_for_second_daktylus', 'no_daktyles_found', 'found_two_daktylus', 'fallback']
+	states = ['waiting', 'searching_for_first_daktylus', 'searching_for_second_daktylus', 'no_daktylus_found', {'name': 'found_two_daktyles', 'tags': 'accepted'}, 'fallback']
 	
 	def __init__(self, name):
 		self.name = name
 		self.found_first = False
 		self.found_second = False
 		self.rules = ruleset()
-		self.machine = Machine(model=self, states=FSA14.states, initial='waiting')
+		self.machine = CustomStateMachine(model=self, states=FSA14.states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_daktylus')
 		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus', 'searching_for_second_daktylus', conditions=['is_found(1)'])
-		self.machine.add_transition('search daktylus', 'searching_for_first_daktylus', 'no_daktyles_found', unless=['is_found(1)'])
-		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'found_two_daktylus', conditions=['is_found(2)'])
-		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'no_daktyles_found', unless=['is_found(2)'])
+		self.machine.add_transition('search daktylus', 'searching_for_first_daktylus', 'no_daktylus_found', unless=['is_found(1)'])
+		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'found_two_daktyles', conditions=['is_found(2)'])
+		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'no_daktylus_found', unless=['is_found(2)'])
 		self.machine.add_transition('failure', 'no_daktylus_found', 'fallback')
 		
 	def is_found(position):
@@ -352,14 +357,14 @@ class FSA14(object):
 	
 class FSA15(object):
 
-	states = ['waiting', 'searching_for_first_spondeus', 'searching_for_second_spondeus', 'no_spondeus_found', 'found_two_spondees', 'fallback']
+	states = ['waiting', 'searching_for_first_spondeus', 'searching_for_second_spondeus', 'no_spondeus_found', {'name': 'found_two_spondees', 'tags': 'accepted'}, 'fallback']
 	
 	def __init__(self, name):
 		self.name = name
 		self.found_first = False
 		self.found_second = False
 		self.rules = ruleset()
-		self.machine = Machine(model=self, states=FSA15.states, initial='waiting')
+		self.machine = CustomStateMachine(model=self, states=FSA15.states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'searching_for_second_spondeus', conditions=['is_found(1)'])
@@ -378,35 +383,21 @@ class FSA15(object):
 			raise Exception("invalid position")
 	
 class FSA16(object):
-#TODO: redesign automaton: looking for one spondee
-	states = ['waiting', 'searching_for_first_spondeus', 'searching_for_second_spondeus', 'searching_for_third_spondeus', 'no_spondeus_found', 'found_three_spondees', 'fallback']
+	states = ['waiting', 'searching_for_spondeus', {'name': 'spondeus_found', 'tags': 'accepted'}, 'spondeus_not_found', 'fallback']
 	
 	def __init__(self, name):
 		self.name = name
-		self.found_first = False
-		self.found_second = False
-		self.found_third = False
+		self.found = False
 		self.rules = ruleset()
-		self.machine = Machine(model=self, states=FSA16.states, initial='waiting')
+		self.machine = CustomStateMachine(model=self, states=FSA16.states, initial='waiting')
 		
-		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus')
-		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'searching_for_second_spondeus', conditions=['is_found(1)'])
-		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus', 'no_spondeus_found', unless=['is_found(1)'])
-		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'searching_for_third_spondeus', conditions=['is_found(2)'])
-		self.machine.add_transition('search_second', 'searching_for_second_spondeus', 'no_spondeus_found', unless=['is_found(2)'])
-		self.machine.add_transition('search_third', 'searching_for_third_spondeus', 'found_three_spondees', conditions=['is_found(3)'])
-		self.machine.add_transition('search_third', 'searching_for_third_spondeus', 'no_spondeus_found', unless=['is_found(3)'])
-		self.machine.add_transition('failure', 'no_spondeus_found', 'fallback')
+		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_spondeus')
+		self.machine.add_transition('search_spondeus', 'searching_for_spondeus', 'spondeus_found', conditions=['is_found()'])
+		self.machine.add_transition('search_spondeus', 'searching_for_spondeus', 'spondeus_not_found', unless=['is_found()'])
+		self.machine.add_transition('failure', 'spondeus_not_found', 'fallback')
 		
-	def is_found(position):
-		if position == 1:
-			return self.found_first
-		elif position == 2:
-			return self.found_second
-		elif position == 3:
-			return self.found_second
-		else:
-			raise Exception("invalid position")
+	def is_found():
+		return self.found
 		
 ####MAIN PROGRAM####	
 	
