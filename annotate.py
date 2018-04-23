@@ -328,20 +328,19 @@ class FSA13(object):
 	def search_daktylus(self):
 		if self.search(10):
 			self.scansion = '-- -- -- -- -** -X'
-			#solution found, no need to execute the rest
-			return
+			self.found_daktylus()
 		elif self.search(6):
 			self.scansion = '-- -- -** -- -- -X'
-			return
+			self.found_daktylus()
 		elif self.search(8):
 			self.scansion = '-- -- -- -** -- -X'
-			return
+			self.found_daktylus()
 		elif self.search(2):
 			self.scansion = '-** -- -- -- -- -X'
-			return
+			self.found_daktylus()
 		elif self.search(4):
 			self.scansion = '-- -** -- -- -- -X'
-			return
+			self.found_daktylus()
 	
 	def set_text(self, text):
 		self.text = text
@@ -593,9 +592,7 @@ for line in lines:
 			fsa13.to_waiting()
 		fsa13.set_text(syllabified)
 		fsa13.start_analysis()
-		#TODO: Benutzung angleichen
-		if(fsa13.scansion):
-			fsa13.found_daktylus()
+		if(fsa13.state == 'daktylus_found'):
 			scansion = fsa13.scansion
 		else:
 			print('not found, fallback required')
