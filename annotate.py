@@ -2,6 +2,7 @@ import re
 import sys
 #for finite-state transducer (fallback processing)
 import hfst
+import numpy
 import codecs
 #for random number generation
 from random import randint
@@ -305,7 +306,7 @@ class CustomStateMachine(Machine):
 	
 class FSA13(object):
 
-	states = [{'name': 'waiting', 'on_enter': 'reset_found'}, {'name': 'searching_for_daktylus', 'on_enter': 'search_daktylus'}, {'name': 'daktylus_found', 'tags': 'accepted'}, 'daktylus_not_found', 'fallback']
+	states = ['waiting', {'name': 'searching_for_daktylus', 'on_enter': 'search_daktylus'}, {'name': 'daktylus_found', 'tags': 'accepted'}, 'daktylus_not_found', 'fallback']
 	
 	def __init__(self, name):
 		#name of the FSA
@@ -342,9 +343,6 @@ class FSA13(object):
 			self.scansion = '-- -** -- -- -- -X'
 			return
 	
-	def reset_found(self):
-		self.found = False
-	
 	def set_text(self, text):
 		self.text = text
 		
@@ -354,33 +352,139 @@ class FSA13(object):
 	
 class FSA14(object):
 
-	states = ['waiting', 'searching_for_first_daktylus', 'searching_for_second_daktylus', 'no_daktylus_found', {'name': 'found_two_daktyles', 'tags': 'accepted'}, 'fallback']
+	states = [{'name': 'waiting', 'on_enter': 'reset_positions'}, {'name': 'searching_for_first_daktylus', 'on_enter': 'search_first'}, {'name': 'searching_for_second_daktylus', 'on_enter': 'search_second'}, 'no_daktylus_found', {'name': 'found_two_daktyles', 'on_enter': 'make_scansion', 'tags': 'accepted'}, 'fallback']
 	
 	def __init__(self, name):
 		self.name = name
-		self.found_first = False
-		self.found_second = False
 		self.rules = ruleset()
 		self.text = ''
+		self.scansion = ''
+		self.positions = numpy.empty(2, dtype=int)
 		self.machine = CustomStateMachine(model=self, states=FSA14.states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_daktylus')
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus', 'searching_for_second_daktylus', conditions=['is_found(1)'])
-		self.machine.add_transition('search daktylus', 'searching_for_first_daktylus', 'no_daktylus_found', unless=['is_found(1)'])
-		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'found_two_daktyles', conditions=['is_found(2)'])
-		self.machine.add_transition('search_second', 'searching_for_second_daktylus', 'no_daktylus_found', unless=['is_found(2)'])
-		self.machine.add_transition('failure', 'no_daktylus_found', 'fallback')
-		
-	def is_found(self, position):
-		if position == 1:
-			return self.found_first
-		elif position == 2:
-			return self.found_second
-		else:
-			raise Exception("invalid position")
+		self.machine.add_transition('search_first_daktylus', 'searching_for_first_daktylus', 'searching_for_second_daktylus', conditions=[self.first_found])
+		self.machine.add_transition('search_first_daktylus', 'searching_for_first_daktylus', 'no_daktylus_found', unless=[self.first_found])
+		self.machine.add_transition('search_second_daktylus', 'searching_for_second_daktylus', 'found_two_daktyles', conditions=[self.second_found])
+		self.machine.add_transition('search_second_daktylus', 'searching_for_second_daktylus', 'no_daktylus_found', unless=[self.second_found])
+		self.machine.add_transition('not_found', 'no_daktylus_found', 'fallback')
 			
+	def search_first(self):
+		if self.search(10):
+			#found daktylus in fifth syllable
+			self.positions[0] = 5
+			self.search_first_daktylus()
+		elif self.search(6):
+			self.positions[0] = 3
+			self.search_first_daktylus()
+		elif self.search(8):
+			self.positions[0] = 4
+			self.search_first_daktylus()
+		elif self.search(2):
+			self.positions[0] = 1
+			self.search_first_daktylus()
+		#last case is not executed because no second daktylus can be found
+		else:
+			#search failed, passing into no_daktylus_found
+			self.search_first_daktylus()
+			
+	def search_second(self):
+		if self.positions[0] != 3:
+			if self.search(8):
+				self.positions[1] = 4
+				self.search_second_daktylus()
+			elif self.search(2):
+				self.positions[1] = 1
+				self.search_second_daktylus()
+			elif self.search(4):
+				self.positions[1] = 2
+				self.search_second_daktylus()
+			else:
+				self.search_second_daktylus()
+		elif self.positions[0] != 4:
+			if self.search(2):
+				self.positions[1] = 1
+				self.search_second_daktylus()
+			elif self.search(4):
+				self.positions[1] = 2
+				self.search_second_daktylus()
+			else:
+				self.search_second_daktylus()
+		elif self.search(4):
+			self.positions[1] = 2
+			self.search_second_daktylus()
+		else:
+			if self.search(6):
+				self.positions[0] = 3
+				self.search_first_daktylus()
+			elif self.search(8):
+				self.positions[0] = 4
+				self.search_first_daktylus()
+			elif self.search(2):
+				self.positions[0] = 1
+				self.search_first_daktylus()
+			else:
+				self.search_second_daktylus()
+	
 	def set_text(self, text):
 		self.text = text
+		
+	def search(self, position):
+		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
+			return True
+	
+	def first_found(self):
+		if self.positions[0]:
+			return True
+		else:
+			return False
+			
+	def second_found(self):
+		if self.positions[1]:
+			return True
+		else:
+			return False
+			
+	def reset_positions(self):
+		self.positions = numpy.empty(2, dtype=int)
+		
+	def make_scansion(self):
+		if 1 in self.positions:
+			self.scansion = '-**'
+			if 2 in self.positions:
+				self.scansion+='-** -- -- -- -X'
+				return
+			elif 3 in self.positions:
+				self.scansion+='-- -** -- -- -X'
+				return				
+			elif 4 in self.positions:
+				self.scansion+='-- -- -** -- -X'
+				return
+			elif 5 in self.positions:
+				self.scansion+='-- -- -- -** -X'
+				return
+		elif 2 in self.positions:
+			self.scansion = '-- -**'
+			if 3 in self.positions:
+				self.scansion+='-** -- -- -X'
+				return				
+			elif 4 in self.positions:
+				self.scansion+='-- -** -- -X'
+				return
+			elif 5 in self.positions:
+				self.scansion+='-- -- -** -X'
+				return
+		elif 3 in self.positions:
+			self.scansion = '-- -- -**'
+			if 4 in self.positions:
+				self.scansion+='-** -- -X'
+				return
+			elif 5 in self.positions:
+				self.scansion+='-- -** -X'
+				return
+		elif 4 in self.positions:
+			self.scansion = '-- -- -- -** -** -X'
+			return
 	
 class FSA15(object):
 
@@ -489,6 +593,7 @@ for line in lines:
 			fsa13.to_waiting()
 		fsa13.set_text(syllabified)
 		fsa13.start_analysis()
+		#TODO: Benutzung angleichen
 		if(fsa13.scansion):
 			fsa13.found_daktylus()
 			scansion = fsa13.scansion
@@ -500,7 +605,13 @@ for line in lines:
 		scansion = 'two daktyles must be found'
 		if fsa14.state != 'waiting':
 			fsa14.to_waiting()
+		fsa14.set_text(syllabified)
 		fsa14.start_analysis()
+		if(fsa14.state == 'found_two_daktyles'):
+			scansion = fsa14.scansion
+		else:
+			print('not found, fallback required')
+			fsa14.not_found()
 	
 	elif syllable_count == 15:
 		scansion = 'two spondees must be found'
