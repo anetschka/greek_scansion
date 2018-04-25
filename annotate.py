@@ -96,7 +96,13 @@ for line in lines:
 		scansion = 'one spondeus must be found'
 		if fsa16.state != 'waiting':
 			fsa16.to_waiting()
+		fsa16.set_text(syllabified)
 		fsa16.start_analysis()
+		if(fsa16.state == 'spondeus_found'):
+			scansion = fsa16.scansion
+		else:
+			print('not found, fallback required')
+			fsa16.not_found()
 		
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'

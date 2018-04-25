@@ -72,8 +72,8 @@ class FSA13(object):
 		#transitions
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_daktylus')
 		self.machine.add_transition('found_daktylus', 'searching_for_daktylus', 'daktylus_found')
-		self.machine.add_transition('not_found', 'searching_for_daktylus', 'daktylus_not_found')
-		self.machine.add_transition('fallback_analysis', 'daktylus_not_found', 'fallback')
+		self.machine.add_transition('no_daktylus_found', 'searching_for_daktylus', 'daktylus_not_found')
+		self.machine.add_transition('not_found', 'daktylus_not_found', 'fallback')
 			
 	def _search_daktylus(self):
 		if self._search(10):
@@ -92,6 +92,8 @@ class FSA13(object):
 		elif self._search(4):
 			self.scansion = '-- -** -- -- -- -X'
 			self.found_daktylus()
+		else:
+			self.no_daktylus_found()
 	
 	def set_text(self, text):
 		self.text = text
@@ -388,23 +390,44 @@ class FSA15(object):
 			return
 	
 class FSA16(object):
-	states = ['waiting', 'searching_for_spondeus', {'name': 'spondeus_found', 'tags': 'accepted'}, 'spondeus_not_found', 'fallback']
+	_states = ['waiting', {'name': 'searching_for_spondeus', 'on_enter': '_search_spondeus'}, {'name': 'spondeus_found', 'tags': 'accepted'}, 'spondeus_not_found', 'fallback']
 	
 	def __init__(self, name):
 		self.name = name
 		self.found = False
 		self.rules = ruleset()
 		self.text = ''
-		self.machine = CustomStateMachine(model=self, states=FSA16.states, initial='waiting')
+		self.scansion = ''
+		self.machine = CustomStateMachine(model=self, states=FSA16._states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_spondeus')
-		self.machine.add_transition('search_spondeus', 'searching_for_spondeus', 'spondeus_found', conditions=['is_found()'])
-		self.machine.add_transition('search_spondeus', 'searching_for_spondeus', 'spondeus_not_found', unless=['is_found()'])
-		self.machine.add_transition('failure', 'spondeus_not_found', 'fallback')
+		self.machine.add_transition('found_spondeus', 'searching_for_spondeus', 'spondeus_found')
+		self.machine.add_transition('no_spondeus_found', 'searching_for_spondeus', 'spondeus_not_found')
+		self.machine.add_transition('not_found', 'spondeus_not_found', 'fallback')
 		
-	def is_found(self):
-		return self.found
-		
+	def _search_spondeus(self):
+		if self._search(4):
+			self.scansion = '-** -- -** -** -** -X'
+			self.found_spondeus()
+		elif self._search(2):
+			self.scansion = '-- -** -** -** -** -X'
+			self.found_spondeus()
+		elif self._search(8):
+			self.scansion = '-** -** -** -- -** -X'
+			self.found_spondeus()
+		elif self._search(6):
+			self.scansion = '-** -** -- -** -** -X'
+			self.found_spondeus()
+		elif self._search(10):
+			self.scansion = '-** -** -** -** -- -X'
+			self.found_spondeus()
+		else:
+			self.no_spondeus_found()
+	
 	def set_text(self, text):
 		self.text = text
+		
+	def _search(self, position):
+		if self.rules.rule1(self.text, position) or self.rules.rule2(self.text, position) or self.rules.rule3(self.text, position) or self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
+			return True
 		
