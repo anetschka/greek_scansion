@@ -84,7 +84,13 @@ for line in lines:
 		scansion = 'two spondees must be found'
 		if fsa15.state != 'waiting':
 			fsa15.to_waiting()
+		fsa15.set_text(syllabified)
 		fsa15.start_analysis()
+		if(fsa15.state == 'found_two_spondees'):
+			scansion = fsa15.scansion
+		else:
+			print('not found, fallback required')
+			fsa15.not_found()
 		
 	elif syllable_count == 16:
 		scansion = 'one spondeus must be found'
