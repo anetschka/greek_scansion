@@ -7,7 +7,7 @@ import codecs
 from preprocessing import selector, preprocessor
 #linguistic rules and FSAs for verse processing
 from automata import ruleset, FSA13, FSA14, FSA15, FSA16
-from hAutomata import HFSA13, HFSA14, HFSA15
+from hAutomata import HFSA13, HFSA14, HFSA15, HFSA16
 
 ####MAIN PROGRAM####	
 	
@@ -27,11 +27,12 @@ prep = preprocessor()
 #make dedicated FSAs for processing lines with different syllable count
 #fsa13 = FSA13('fsa13')
 #fsa15 = FSA15('fsa15')
-fsa16 = FSA16('fsa16')
+#fsa16 = FSA16('fsa16')
 
 hfsa13 = HFSA13("test")
 hfsa14 = HFSA14("test")
 hfsa15 = HFSA15("test")
+hfsa16 = HFSA16("test")
 
 #only for tracking number of lines with obviously erroneous syllabification
 syll_counter = 0
@@ -98,15 +99,15 @@ for line in lines:
 		
 	elif syllable_count == 16:
 		scansion = 'one spondeus must be found'
-		if fsa16.state != 'waiting':
-			fsa16.to_waiting()
-		fsa16.set_text(syllabified)
-		fsa16.start_analysis()
-		if(fsa16.state == 'spondeus_found'):
-			scansion = fsa16.scansion
+		if hfsa16.state != 'waiting':
+			hfsa16.to_waiting()
+		hfsa16.set_text(syllabified)
+		hfsa16.start_analysis()
+		if(hfsa16.state == 'spondeus_found'):
+			scansion = hfsa16.scansion
 		else:
 			print('not found, fallback required')
-			fsa16.not_found()
+			hfsa16.not_found()
 		
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'

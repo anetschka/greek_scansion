@@ -337,5 +337,77 @@ class HFSA15(object):
 	def _search(self, position):
 		if self.rules.rule1(self.text, position) or self.rules.rule2(self.text, position) or self.rules.rule3(self.text, position) or self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
 			return True
+			
+class HFSA16(object):
+
+	_states = [
+	'waiting',
+	{'name': 'searching_for_spondeus', 'children': ['secondF', 'firstF', 'fourthF', 'thirdF', 'fifthF']},
+	{'name': 'spondeus_found', 'tags': 'accepted'},
+	'no_spondeus_found',
+	'fallback'
+	]
+	
+	def __init__(self, name):
+		self.name = name
+		self.rules = ruleset()
+		self.text = ''
+		self.scansion = ''
+		self.machine = CustomStateMachine(model=self, states=HFSA16._states, initial='waiting')
 		
+		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_spondeus_secondF', after='_search_second')
+		self.machine.add_transition('found_spondeus', 'searching_for_spondeus_secondF', 'spondeus_found')
+		self.machine.add_transition('not_found', 'searching_for_spondeus_secondF', 'searching_for_spondeus_firstF', after='_search_first')
+		self.machine.add_transition('found_spondeus', 'searching_for_spondeus_firstF', 'spondeus_found')
+		self.machine.add_transition('not_found', 'searching_for_spondeus_firstF', 'searching_for_spondeus_fourthF', after='_search_fourth')
+		self.machine.add_transition('found_spondeus', 'searching_for_spondeus_fourthF', 'spondeus_found')
+		self.machine.add_transition('not_found', 'searching_for_spondeus_fourthF', 'searching_for_spondeus_thirdF', after='_search_third')
+		self.machine.add_transition('found_spondeus', 'searching_for_spondeus_thirdF', 'spondeus_found')
+		self.machine.add_transition('not_found', 'searching_for_spondeus_thirdF', 'searching_for_spondeus_fifthF', after='_search_fifth')
+		self.machine.add_transition('found_spondeus', 'searching_for_spondeus_fifthF', 'spondeus_found')
+		self.machine.add_transition('not_found', 'searching_for_spondeus_fifthF', 'no_spondeus_found')
+		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
+	
+	def _search_second(self):
+		if self._search(5):
+			self.scansion = '-** -- -** -** -** -X'
+			self.found_spondeus()
+		else:
+			self.not_found()
+		
+	def _search_first(self):
+		if self._search(2):
+			self.scansion = '-- -** -** -** -** -X'
+			self.found_spondeus()
+		else:
+			self.not_found()
+			
+	def _search_fourth(self):
+		if self._search(11):
+			self.scansion = '-** -** -** -- -** -X'
+			self.found_spondeus()
+		else:
+			self.not_found()
+			
+	def _search_third(self):
+		if self._search(8):
+			self.scansion = '-** -** -- -** -** -X'
+			self.found_spondeus()
+		else:
+			self.not_found()
+			
+	def _search_fifth(self):
+		if self._search(14):
+			self.scansion = '-** -** -** -** -- -X'
+			self.found_spondeus()
+		else:
+			self.not_found()
+		
+	def set_text(self, text):
+		self.text = text
+		
+	def _search(self, position):
+		if self.rules.rule1(self.text, position) or self.rules.rule2(self.text, position) or self.rules.rule3(self.text, position) or self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
+			return True
+	
 	
