@@ -18,7 +18,6 @@ lines = infile.readlines()
 #get a verse selector: use this to select and process a random subset of verses
 #sel = selector()
 #selection = sel.select(lines, 1)
-#print(selection, file = outfile)
 
 #get a preprocessor
 prep = preprocessor()
