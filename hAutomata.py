@@ -49,12 +49,47 @@ class ruleset(object):
 		if re.search(r'[αιουεωη]{1,*}', current) and re.match(r'[αιουεωη]{1,*}', next):
 			return True
 
+#superclass encapsulating basic functionality
+class Annotator(object):
+
+	def __init__(self, name):
+		self.name = name
+		self.rules = ruleset()
+		self.text = ''
+		self.scansion = ''
+		self.positions = [0, 0]
+		
+	def _first_found(self):
+		if self.positions[0] > 0:
+			return True
+		else:
+			return False
+			
+	def _second_found(self):
+		if self.positions[1] > 0:
+			return True
+		else:
+			return False
+			
+	def _reset_positions(self):		
+		self.positions = [0, 0]
+		self.scansion = ''
+		
+	def set_text(self, text):
+		self.text = text
+	
+	def _update_positions(self, position):
+		if self.positions[0] > 0:
+			self.positions[1] = position
+		else:
+			self.positions[0] = position
+			
 #hierarchical FSAs governing the application of rules
 @add_state_features(Tags)
 class CustomStateMachine(Machine):
 	pass
 
-class HFSA13(object):
+class HFSA13(Annotator):
 
 	_states = [
 	'waiting',
@@ -65,10 +100,7 @@ class HFSA13(object):
 	]
 	
 	def __init__(self, name):
-		self.name = name
-		self.rules = ruleset()
-		self.text = ''
-		self.scansion = ''
+		Annotator.__init__(self, name)
 		self.machine = CustomStateMachine(model=self, states=HFSA13._states, initial='waiting')
 		
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_daktylus_fifthF', after='_search_fifth')
@@ -120,14 +152,11 @@ class HFSA13(object):
 		else:
 			self.not_found()
 		
-	def set_text(self, text):
-		self.text = text
-		
 	def _search(self, position):
 		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
 			return True
 	
-class HFSA14(object):
+class HFSA14(Annotator):
 
 	_states = [
 	{'name': 'waiting', 'on_enter': '_reset_positions'},
@@ -139,11 +168,7 @@ class HFSA14(object):
 	]
 	
 	def __init__(self, name):
-		self.name = name
-		self.rules = ruleset()
-		self.text = ''
-		self.scansion = ''
-		self.positions = [0, 0]
+		Annotator.__init__(self, name)
 		self.machine = CustomStateMachine(model=self, states=HFSA14._states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_daktylus_fifthF', after='_search_fifth')
@@ -190,31 +215,6 @@ class HFSA14(object):
 		if self._search(4) or self._search(5) or self._search(6):
 			self._update_positions(2)
 		self.search_daktylus()
-		
-	def _first_found(self):
-		if self.positions[0] > 0:
-			return True
-		else:
-			return False
-			
-	def _second_found(self):
-		if self.positions[1] > 0:
-			return True
-		else:
-			return False
-			
-	def _reset_positions(self):		
-		self.positions = [0, 0]
-		self.scansion = ''
-		
-	def set_text(self, text):
-		self.text = text
-	
-	def _update_positions(self, position):
-		if self.positions[0] > 0:
-			self.positions[1] = position
-		else:
-			self.positions[0] = position
 	
 	def _make_scansion(self):
 		if 1 in self.positions:
@@ -257,7 +257,7 @@ class HFSA14(object):
 		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
 			return True
 
-class HFSA15(object):
+class HFSA15(Annotator):
 
 	_states = [
 	{'name': 'waiting', 'on_enter': '_reset_positions'},
@@ -269,11 +269,7 @@ class HFSA15(object):
 	]
 	
 	def __init__ (self, name):
-		self.name = name
-		self.rules = ruleset()
-		self.text = ''
-		self.scansion = ''
-		self.positions = [0, 0]
+		Annotator.__init__(self, name)
 		self.machine = CustomStateMachine(model=self, states=HFSA15._states, initial='waiting')
 		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus_secondF', after='_search_second')
@@ -320,31 +316,6 @@ class HFSA15(object):
 			self._update_positions(5)
 		self.search_spondeus()
 		
-	def _first_found(self):
-		if self.positions[0] > 0:
-			return True
-		else:
-			return False
-		
-	def _second_found(self):
-		if self.positions[1] > 0:
-			return True
-		else:
-			return False
-	
-	def _reset_positions(self):
-		self.positions = [0, 0]
-		self.scansion = ''
-		
-	def set_text(self, text):
-		self.text = text
-		
-	def _update_positions(self, position):
-		if self.positions[0] > 0:
-			self.positions[1] = position
-		else:
-			self.positions[0] = position
-		
 	def _make_scansion(self):
 		if 1 in self.positions:
 			self.scansion = '-- '
@@ -385,7 +356,7 @@ class HFSA15(object):
 		if self.rules.rule1(self.text, position) or self.rules.rule2(self.text, position) or self.rules.rule3(self.text, position) or self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
 			return True
 			
-class HFSA16(object):
+class HFSA16(Annotator):
 
 	_states = [
 	'waiting',
@@ -396,10 +367,7 @@ class HFSA16(object):
 	]
 	
 	def __init__(self, name):
-		self.name = name
-		self.rules = ruleset()
-		self.text = ''
-		self.scansion = ''
+		Annotator.__init__(self, name)
 		self.machine = CustomStateMachine(model=self, states=HFSA16._states, initial='waiting')
 		
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_spondeus_secondF', after='_search_second')
@@ -449,9 +417,6 @@ class HFSA16(object):
 			self.found_spondeus()
 		else:
 			self.not_found()
-		
-	def set_text(self, text):
-		self.text = text
 		
 	def _search(self, position):
 		if self.rules.rule1(self.text, position) or self.rules.rule2(self.text, position) or self.rules.rule3(self.text, position) or self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
