@@ -5,9 +5,8 @@ import hfst
 import codecs
 #classes for random data selection and preprocessing
 from preprocessing import selector, preprocessor
-#linguistic rules and FSAs for verse processing
-from automata import ruleset, FSA13, FSA14, FSA15, FSA16
-from hAutomata import HFSA13, HFSA14, HFSA15, HFSA16
+#linguistic rules and hierarchical FSAs for verse processing
+from hAutomata import ruleset, HFSA13, HFSA14, HFSA15, HFSA16
 
 ####MAIN PROGRAM####	
 	
@@ -24,20 +23,17 @@ lines = infile.readlines()
 #get a preprocessor
 prep = preprocessor()
 
-#make dedicated FSAs for processing lines with different syllable count
-#fsa13 = FSA13('fsa13')
-#fsa15 = FSA15('fsa15')
-#fsa16 = FSA16('fsa16')
-
-hfsa13 = HFSA13("test")
-hfsa14 = HFSA14("test")
-hfsa15 = HFSA15("test")
-hfsa16 = HFSA16("test")
+hfsa13 = HFSA13('hfsa13')
+hfsa14 = HFSA14('hfsa14')
+hfsa15 = HFSA15('hfsa15')
+hfsa16 = HFSA16('hfsa16')
 
 #only for tracking number of lines with obviously erroneous syllabification
 syll_counter = 0
 #only for tracking number of short lines
 short_counter = 0
+#sentences with scansion annotation
+scansion_counter = 0
 
 for line in lines:
 #for line in selection:
@@ -69,6 +65,7 @@ for line in lines:
 		hfsa13.start_analysis()
 		if hfsa13.state == 'daktylus_found':
 			scansion = hfsa13.scansion
+			scansion_counter += 1
 		else:
 			print('not found, fallback required')
 			hfsa13.not_found()
@@ -81,6 +78,7 @@ for line in lines:
 		hfsa14.start_analysis()
 		if hfsa14.state == 'found_two_daktyles':
 			scansion = hfsa14.scansion
+			scansion_counter += 1
 		else:
 			print('not found, fallback required')
 			hfsa14.not_found()
@@ -93,6 +91,7 @@ for line in lines:
 		hfsa15.start_analysis()
 		if(hfsa15.state == 'found_two_spondees'):
 			scansion = hfsa15.scansion
+			scansion_counter += 1
 		else:
 			print('not found, fallback required')
 			hfsa15.not_found()
@@ -105,6 +104,7 @@ for line in lines:
 		hfsa16.start_analysis()
 		if(hfsa16.state == 'spondeus_found'):
 			scansion = hfsa16.scansion
+			scansion_counter += 1
 		else:
 			print('not found, fallback required')
 			hfsa16.not_found()
@@ -112,13 +112,14 @@ for line in lines:
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
 	
-	#else:
-		#print("WARNING: Incorrect syllable count: " + vals[0])
-		#syll_counter += 1
+	else:
+		print("WARNING: Incorrect syllable count: " + vals[0])
+		syll_counter += 1
 	
 	#output
 	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
 
 #log	
-#print(syll_counter, " incorrectly syllabified verses")
-#print(short_counter, " short verses")
+print(syll_counter, ' incorrectly syllabified verses')
+print(short_counter, ' short verses')
+print(scansion_counter, 'annotated verses')
