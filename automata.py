@@ -246,7 +246,6 @@ class FSA14(object):
 				return
 		elif 4 in self.positions:
 			self.scansion = '-- -- -- -** -** -X'
-			return
 	
 class FSA15(object):
 

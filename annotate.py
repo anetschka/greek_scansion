@@ -5,7 +5,9 @@ import hfst
 import codecs
 #classes for random data selection and preprocessing
 from preprocessing import selector, preprocessor
+#linguistic rules and FSAs for verse processing
 from automata import ruleset, FSA13, FSA14, FSA15, FSA16
+from hAutomata import HFSA13, HFSA14, HFSA15
 
 ####MAIN PROGRAM####	
 	
@@ -23,10 +25,13 @@ lines = infile.readlines()
 prep = preprocessor()
 
 #make dedicated FSAs for processing lines with different syllable count
-fsa13 = FSA13('fsa13')
-fsa14 = FSA14('fsa14')
-fsa15 = FSA15('fsa15')
+#fsa13 = FSA13('fsa13')
+#fsa15 = FSA15('fsa15')
 fsa16 = FSA16('fsa16')
+
+hfsa13 = HFSA13("test")
+hfsa14 = HFSA14("test")
+hfsa15 = HFSA15("test")
 
 #only for tracking number of lines with obviously erroneous syllabification
 syll_counter = 0
@@ -57,40 +62,39 @@ for line in lines:
 		
 	elif syllable_count == 13:
 		scansion = 'one daktylus must be found'
-		#reset automaton when processing is finished
-		if fsa13.state != 'waiting':
-			fsa13.to_waiting()
-		fsa13.set_text(syllabified)
-		fsa13.start_analysis()
-		if(fsa13.state == 'daktylus_found'):
-			scansion = fsa13.scansion
+		if hfsa13.state != 'waiting':
+			hfsa13.to_waiting()
+		hfsa13.set_text(syllabified)
+		hfsa13.start_analysis()
+		if hfsa13.state == 'daktylus_found':
+			scansion = hfsa13.scansion
 		else:
 			print('not found, fallback required')
-			fsa13.not_found()
+			hfsa13.not_found()
 		
 	elif syllable_count == 14:
 		scansion = 'two daktyles must be found'
-		if fsa14.state != 'waiting':
-			fsa14.to_waiting()
-		fsa14.set_text(syllabified)
-		fsa14.start_analysis()
-		if(fsa14.state == 'found_two_daktyles'):
-			scansion = fsa14.scansion
+		if hfsa14.state != 'waiting':
+			hfsa14.to_waiting()
+		hfsa14.set_text(syllabified)
+		hfsa14.start_analysis()
+		if hfsa14.state == 'found_two_daktyles':
+			scansion = hfsa14.scansion
 		else:
 			print('not found, fallback required')
-			fsa14.not_found()
+			hfsa14.not_found()
 	
 	elif syllable_count == 15:
 		scansion = 'two spondees must be found'
-		if fsa15.state != 'waiting':
-			fsa15.to_waiting()
-		fsa15.set_text(syllabified)
-		fsa15.start_analysis()
-		if(fsa15.state == 'found_two_spondees'):
-			scansion = fsa15.scansion
+		if hfsa15.state != 'waiting':
+			hfsa15.to_waiting()
+		hfsa15.set_text(syllabified)
+		hfsa15.start_analysis()
+		if(hfsa15.state == 'found_two_spondees'):
+			scansion = hfsa15.scansion
 		else:
 			print('not found, fallback required')
-			fsa15.not_found()
+			hfsa15.not_found()
 		
 	elif syllable_count == 16:
 		scansion = 'one spondeus must be found'
