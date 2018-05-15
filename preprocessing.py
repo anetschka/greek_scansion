@@ -222,15 +222,31 @@ class preprocessor(object):
 			elif index > 0 and index < len(letters)-1 and letters[index] in consonants and letters[index-1] in vowels and letters[index+1] in vowels:
 				syllabified+='.'
 				syllabified+=letters[index]
+			#vowel before new word with consonant cluster
 			elif index < len(letters)-2 and letters[index] in vowels and (letters[index+1] + letters[index+2] in clusters):
 				syllabified+=letters[index]
 				syllabified+='.'
+			#vowel before consonant cluster
 			elif index < len(letters)-1 and letters[index-1] in vowels and letters[index] in consonants and letters[index+1] in consonants and (letters[index] + letters[index+1] not in clusters):
 				syllabified+=letters[index]
 				syllabified+='.'
+			#trennung vor diphtong
+			#first vowel of diphtong (new)
+			elif index < len(letters)-1 and (letters[index] + letters[index+1] in diphtongs):
+				syllabified+=letters[index]
+			#trennung nach diphtong
+			#sequence of vowels (new)
+			elif index < len(letters)-2 and letters[index] in vowels and letters[index+1] in vowels and (letters[index+1] + letters[index+2] not in diphtongs):
+				syllabified+=letters[index]
+				syllabified+='.'
+			#trennung nach diphtong?
 			else:
 				syllabified+=letters[index]
 		resultsent+=syllabified	
+		
+		#treatment of elision (new)
+		resultsent = re.sub(r'\' ', '', resultsent)
+		#kata muss noch angepasst werden κατ' ἀσπίδα (vokal vorher)
 		
 		return resultsent
 		
