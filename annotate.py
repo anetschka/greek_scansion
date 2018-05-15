@@ -1,7 +1,5 @@
 import re
 import sys
-#for finite-state transducer (fallback processing)
-import hfst
 import codecs
 #classes for random data selection and preprocessing
 from preprocessing import selector, preprocessor
