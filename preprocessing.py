@@ -269,8 +269,6 @@ class preprocessor(object):
 		#treatment of consonants at end of word
 		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ] )', '\g<1>', resultsent)
 		#treatment of remaining accents
-		#resultsent = re.sub(r'ι\.̈', '.ϊ.', resultsent)
-		#resultsent = re.sub(r'υ\.̈', '.ϋ.', resultsent)
 		resultsent = re.sub(r'([ιυ])\.̈', '.\g<1>.', resultsent)
 		#further cleaning
 		resultsent = re.sub(r'\.\.', '.', resultsent)
