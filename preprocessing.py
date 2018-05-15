@@ -71,7 +71,7 @@ class preprocessor(object):
 		text = re.sub(r'ᾳ', 'α', text)
 		text = re.sub(r'ά', 'α', text)
 	
-		text = re.sub(r'ϊ', 'ι', text) 
+		#text = re.sub(r'ϊ', 'ι', text) 
 		text = re.sub(r'ὶ', 'ι', text) 
 		text = re.sub(r'ί', 'ι', text) 
 		text = re.sub(r'ῖ', 'ι', text) 
@@ -102,7 +102,7 @@ class preprocessor(object):
 		text = re.sub(r'ὺ', 'υ', text)
 		text = re.sub(r'ὗ', 'υ', text)
 		text = re.sub(r'ὕ', 'υ', text)
-		text = re.sub(r'ϋ', 'υ', text)
+		#text = re.sub(r'ϋ', 'υ', text)
 		text = re.sub(r'ὑ', 'υ', text)
 		text = re.sub(r'ῦ', 'υ', text)
 		text = re.sub(r'ύ', 'υ', text)
@@ -204,7 +204,8 @@ class preprocessor(object):
 		
 		return resultsent.rstrip(' ')
 		
-	#syllabifies words, removes punctuation, following the article by Papakitsos, E: "Computerized scansion of Ancient Greek Hexameter"
+	#syllabifies words, removes punctuation, following the article by Papakitsos, E: "Computerized scansion of Ancient Greek Hexameter" in combination
+	#with a few other rules
 	def papakitsos_syllabify(self, text):
 		resultsent = ''
 		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
@@ -215,38 +216,70 @@ class preprocessor(object):
 		letters = list(cleaned)
 		syllabified = ''
 		for index in range(0, len(letters)):
-			#first and last letter letter
+			#first and last letter
 			if index == 0 or index == len(letters):
 				syllabified+=letters[index]
+				continue
+			#diese und die folgende regel müssen geprüft werden
+			#consonant before diphtong
+			#elif index < len(letters)-2 and letters[index] in consonants and (letters[index+1] + letters[index+2] in diphtongs):
+			#	syllabified+=letters[index]
+			#	syllabified+='.'
+			#	continue
 			#consonant between vowels
 			elif index > 0 and index < len(letters)-1 and letters[index] in consonants and letters[index-1] in vowels and letters[index+1] in vowels:
 				syllabified+='.'
 				syllabified+=letters[index]
+				continue
 			#vowel before new word with consonant cluster
 			elif index < len(letters)-2 and letters[index] in vowels and (letters[index+1] + letters[index+2] in clusters):
 				syllabified+=letters[index]
 				syllabified+='.'
+				continue
 			#vowel before consonant cluster
 			elif index < len(letters)-1 and letters[index-1] in vowels and letters[index] in consonants and letters[index+1] in consonants and (letters[index] + letters[index+1] not in clusters):
 				syllabified+=letters[index]
 				syllabified+='.'
-			#trennung vor diphtong
+				continue	
+			#vowel before diphtong (new)
+			elif index < len(letters)-2 and letters[index] in vowels and (letters[index+1] + letters[index+2] in diphtongs):
+				syllabified+=letters[index]
+				syllabified+='.'
+				continue
 			#first vowel of diphtong (new)
 			elif index < len(letters)-1 and (letters[index] + letters[index+1] in diphtongs):
 				syllabified+=letters[index]
-			#trennung nach diphtong
+				continue
+			#second vowel of diphtong (new)
+			elif index > 0 and index < len(letters)-1 and (letters[index-1] + letters[index] in diphtongs):
+				syllabified+=letters[index]
+				syllabified+='.'
+				continue
 			#sequence of vowels (new)
 			elif index < len(letters)-2 and letters[index] in vowels and letters[index+1] in vowels and (letters[index+1] + letters[index+2] not in diphtongs):
 				syllabified+=letters[index]
 				syllabified+='.'
-			#trennung nach diphtong?
+				continue
 			else:
 				syllabified+=letters[index]
 		resultsent+=syllabified	
 		
 		#treatment of elision (new)
-		resultsent = re.sub(r'\' ', '', resultsent)
-		#kata muss noch angepasst werden κατ' ἀσπίδα (vokal vorher)
+		resultsent = re.sub(r'\'\.? ', '', resultsent)
+		#treatment of consonants at end of word
+		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ] )', '\g<1>', resultsent)
+		#treatment of remaining accents
+		#resultsent = re.sub(r'ι\.̈', '.ϊ.', resultsent)
+		#resultsent = re.sub(r'υ\.̈', '.ϋ.', resultsent)
+		resultsent = re.sub(r'([ιυ])\.̈', '.\g<1>.', resultsent)
+		#further cleaning
+		resultsent = re.sub(r'\.\.', '.', resultsent)
+		resultsent = re.sub(r'\. ', ' ', resultsent)
+		resultsent = re.sub(r' \.', ' ', resultsent)
+		
+		#TODO: check rules for consonants between vowels/diphtongs
+		#TODO: remove unnecessary accents
+		#TODO: consider using a transducer
 		
 		return resultsent
 		
