@@ -1,4 +1,6 @@
 import re
+#utf8 support
+import codecs
 #for random number generation
 from random import randint
 #for simple syllabification
@@ -43,6 +45,19 @@ class selector(object):
 #class for preprocessing
 class preprocessor(object):
 
+	#reads external preposition file
+	def __init__(self):
+		self.prepositions = codecs.open('resources/long_prepositions.txt', 'r', 'utf-8').readlines()
+		preps = list(self.prepositions)
+		self.prepositions = sorted(preps, key=len, reverse=True)
+		self.prep_pattern = '('
+		for preposition in self.prepositions:
+			preposition = re.sub(r'\r?\n?', '', preposition)
+			self.prep_pattern+=preposition
+			self.prep_pattern+='|'
+		self.prep_pattern = self.prep_pattern[:-1]
+		self.prep_pattern+=')'
+	
 	#removes accents, lowercases
 	def normalise(self, text):
 		#some regexes have to be applied more than once since diacritics can be combined
@@ -71,6 +86,7 @@ class preprocessor(object):
 		text = re.sub(r'ᾳ', 'α', text)
 		text = re.sub(r'ά', 'α', text)
 	
+		text = re.sub(r'ῒ', 'ϊ', text)
 		#text = re.sub(r'ϊ', 'ι', text) 
 		text = re.sub(r'ὶ', 'ι', text) 
 		text = re.sub(r'ί', 'ι', text) 
@@ -96,6 +112,8 @@ class preprocessor(object):
 		text = re.sub(r'Ἐ', 'Ε', text)
 		text = re.sub(r'Ἑ', 'Ε', text)
 	
+		text = re.sub(r'ΰ', 'ϋ', text)
+		text = re.sub(r'ῢ', 'ϋ', text)
 		text = re.sub(r'ῦ', 'υ', text)
 		text = re.sub(r'ύ', 'υ', text)
 		text = re.sub(r'ὐ', 'υ', text)
@@ -208,10 +226,16 @@ class preprocessor(object):
 	#with a few other rules
 	def papakitsos_syllabify(self, text):
 		resultsent = ''
+		#prepositions appearing in compounds
+		preps = re.compile(' '+self.prep_pattern+'[^\' ]{4}')
 		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
 		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		clusters = ['βδ', 'βλ', 'βρ', 'γδ', 'γλ', 'γμ', 'γν', 'γρ', 'δμ', 'δν', 'δρ', 'θλ', 'θμ', 'θν', 'θρ', 'κλ', 'κμ', 'κν', 'κρ', 'κτ', 'μν', 'πλ', 'πν', 'πρ', 'πτ', 'σβ', 'σγ', 'σθ', 'σκ', 'σμ', 'σπ', 'στ', 'σφ', 'σχ', 'τλ', 'τμ', 'τν', 'τρ', 'φθ', 'φλ', 'φν', 'φρ', 'χθ', 'χλ', 'χμ', 'χν', 'χρ']
+		#handling of prepositions
+		match = re.search(preps, text)
+		if match:
+			text = re.sub(preps, match.group()[:-4] + ' ' + match.group()[-4:], text)
 		cleaned = re.sub(r'[,:\.]', '', text)
 		letters = list(cleaned)
 		syllabified = ''
@@ -220,12 +244,6 @@ class preprocessor(object):
 			if index == 0 or index == len(letters):
 				syllabified+=letters[index]
 				continue
-			#diese und die folgende regel müssen geprüft werden
-			#consonant before diphtong
-			#elif index < len(letters)-2 and letters[index] in consonants and (letters[index+1] + letters[index+2] in diphtongs):
-			#	syllabified+=letters[index]
-			#	syllabified+='.'
-			#	continue
 			#consonant between vowels
 			elif index > 0 and index < len(letters)-1 and letters[index] in consonants and letters[index-1] in vowels and letters[index+1] in vowels:
 				syllabified+='.'
@@ -240,7 +258,7 @@ class preprocessor(object):
 			elif index < len(letters)-1 and letters[index-1] in vowels and letters[index] in consonants and letters[index+1] in consonants and (letters[index] + letters[index+1] not in clusters):
 				syllabified+=letters[index]
 				syllabified+='.'
-				continue	
+				continue
 			#vowel before diphtong (new)
 			elif index < len(letters)-2 and letters[index] in vowels and (letters[index+1] + letters[index+2] in diphtongs):
 				syllabified+=letters[index]
@@ -274,10 +292,6 @@ class preprocessor(object):
 		resultsent = re.sub(r'\.\.', '.', resultsent)
 		resultsent = re.sub(r'\. ', ' ', resultsent)
 		resultsent = re.sub(r' \.', ' ', resultsent)
-		
-		#TODO: check rules for consonants between vowels/diphtongs
-		#TODO: remove unnecessary accents
-		#TODO: consider using a transducer
 		
 		return resultsent
 		

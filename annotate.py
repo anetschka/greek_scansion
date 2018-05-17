@@ -8,8 +8,11 @@ from hAutomata import ruleset, HFSA13, HFSA14, HFSA15, HFSA16
 
 ####MAIN PROGRAM####	
 	
-infile = codecs.open(sys.argv[1], "r", "utf-8")
-outfile = codecs.open(sys.argv[2], "w", "utf-8")
+infile = codecs.open(sys.argv[1], 'r', 'utf-8')
+outfile = codecs.open(sys.argv[2], 'w', 'utf-8')
+
+#additional preposition list used for syllabification
+prepositions = codecs.open("resources/prepositions.txt", "r", "utf-8").readlines()
 
 lines = infile.readlines()
 
@@ -40,6 +43,7 @@ for line in lines:
 	
 	#preprocessing
 	text = prep.normalise(vals[1])
+
 	#signal very short verses
 	if prep.get_verse_length(text) < 4:
 		short_counter+=1
@@ -115,7 +119,7 @@ for line in lines:
 	
 	#output
 	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
-
+	
 #log	
 print(syll_counter, ' incorrectly syllabified verses')
 print(short_counter, ' short verses')

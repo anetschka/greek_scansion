@@ -189,7 +189,7 @@ class HFSA14(Annotator):
 		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_secondF', 'found_two_daktyles', conditions=[self._second_found])
 		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_secondF', 'no_daktylus_found', unless=[self._second_found])
 		self.machine.add_transition('not_found', 'no_daktylus_found', 'fallback')
-		
+		#TODO: short syllables must be paired!!
 	def _search_fifth(self):
 		#search through a range of syllables, returning true only for safe cases
 		if self._search(10) or self._search(11) or self._search(12):
