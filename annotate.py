@@ -57,6 +57,7 @@ for line in lines:
 	#scansion annotation
 	if syllable_count == 12:
 		scansion = '-- -- -- -- -- -X'
+		scansion_counter += 1
 		
 	elif syllable_count == 13:
 		scansion = 'one daktylus must be found'
@@ -69,6 +70,7 @@ for line in lines:
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
+			scansion = hfsa13.scansion + ' for fallback'
 			hfsa13.not_found()
 		
 	elif syllable_count == 14:
@@ -82,6 +84,7 @@ for line in lines:
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
+			scansion = hfsa14.scansio + ' for fallback'
 			hfsa14.not_found()
 	
 	elif syllable_count == 15:
@@ -95,6 +98,7 @@ for line in lines:
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
+			scansion = hfsa15.scansion + ' for fallback '
 			hfsa15.not_found()
 		
 	elif syllable_count == 16:
@@ -108,10 +112,12 @@ for line in lines:
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
+			scansion = hfsa16.scansion + ' for fallback'
 			hfsa16.not_found()
 		
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
+		scansion_counter += 1
 	
 	else:
 		print("WARNING: Incorrect syllable count: " + vals[0])

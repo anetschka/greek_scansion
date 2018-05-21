@@ -243,41 +243,33 @@ class preprocessor(object):
 			#first and last letter
 			if index == 0 or index == len(letters):
 				syllabified+=letters[index]
-				continue
 			#consonant between vowels
 			elif index > 0 and index < len(letters)-1 and letters[index] in consonants and letters[index-1] in vowels and letters[index+1] in vowels:
 				syllabified+='.'
 				syllabified+=letters[index]
-				continue
 			#vowel before new word with consonant cluster
 			elif index < len(letters)-2 and letters[index] in vowels and (letters[index+1] + letters[index+2] in clusters):
 				syllabified+=letters[index]
 				syllabified+='.'
-				continue
 			#vowel before consonant cluster
 			elif index < len(letters)-1 and letters[index-1] in vowels and letters[index] in consonants and letters[index+1] in consonants and (letters[index] + letters[index+1] not in clusters):
 				syllabified+=letters[index]
 				syllabified+='.'
-				continue
 			#vowel before diphtong (new)
 			elif index < len(letters)-2 and letters[index] in vowels and (letters[index+1] + letters[index+2] in diphtongs):
 				syllabified+=letters[index]
 				syllabified+='.'
-				continue
 			#first vowel of diphtong (new)
 			elif index < len(letters)-1 and (letters[index] + letters[index+1] in diphtongs):
 				syllabified+=letters[index]
-				continue
 			#second vowel of diphtong (new)
 			elif index > 0 and index < len(letters)-1 and (letters[index-1] + letters[index] in diphtongs):
 				syllabified+=letters[index]
 				syllabified+='.'
-				continue
 			#sequence of vowels (new)
 			elif index < len(letters)-2 and letters[index] in vowels and letters[index+1] in vowels and (letters[index+1] + letters[index+2] not in diphtongs):
 				syllabified+=letters[index]
 				syllabified+='.'
-				continue
 			else:
 				syllabified+=letters[index]
 		resultsent+=syllabified	
