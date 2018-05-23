@@ -275,7 +275,9 @@ class preprocessor(object):
 		resultsent+=syllabified	
 		
 		#treatment of elision (new)
-		resultsent = re.sub(r'\'\.? ', '', resultsent)
+		resultsent = re.sub(r'(.)\'\.? ', '.\g<1>', resultsent)
+		#however, a single consonant should not be separated from the next syllable
+		resultsent = re.sub(r'(\.[ςβγδθκλμνπρστφχξζψ])\.', '\g<1>', resultsent)
 		#treatment of consonants at end of word
 		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ] )', '\g<1>', resultsent)
 		#treatment of remaining accents

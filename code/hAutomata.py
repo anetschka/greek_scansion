@@ -116,8 +116,9 @@ class CustomStateMachine(Machine):
 	pass
 
 	
-#TODO: handling of implausible annotations (else bei make_scansion)
-#überprüfung aller silben, die nicht geprüft wurden (oder nur im fallback?)	
+#TODO: handling of implausible annotations (else bei make_scansion)	
+#TODO: remove customstatemachine
+#TODO: überprüfung aller silben, die nicht geprüft wurden (oder nur im fallback?)
 	
 class HFSA13(Annotator):
 
@@ -125,7 +126,7 @@ class HFSA13(Annotator):
 	{'name': 'waiting', 'on_enter': '_reset_positions'},
 	{'name': 'searching_for_daktylus', 'children': ['fifthF', 'thirdF', 'fourthF', 'firstF', 'secondF']},
 	{'name': 'daktylus_found', 'tags': 'accepted'},
-	{'name': 'no_daktylus_found', 'on_enter': '_make_daktyle(11)'},
+	{'name': 'no_daktylus_found', 'on_enter': '_make_daktyle'},
 	'fallback'
 	]
 	
@@ -153,11 +154,11 @@ class HFSA13(Annotator):
 			self.scansion = '-- -- -- -- -** -X'
 			self.found_daktylus()
 		elif self._search(10):
-			self._update_positions(10)
+			self.positions.append(10)
 			self.questions.append(11)
 			self.not_found()
 		elif self._search(11):
-			self._update_positions(11)
+			self.positions.append(11)
 			self.questions.append(10)
 			self.not_found()
 		else:
@@ -223,6 +224,9 @@ class HFSA13(Annotator):
 		else:
 			self.not_found()
 		
+	def _make_daktyle(self):
+		Annotator._make_daktyle(self, 11)
+	
 	def _search(self, position):
 		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
 			return True
@@ -233,7 +237,7 @@ class HFSA14(Annotator):
 	{'name': 'waiting', 'on_enter': '_reset_positions'},
 	{'name': 'searching_for_first_daktylus', 'children': ['fifthF', 'thirdF', 'fourthF', 'firstF']}, 
 	{'name': 'searching_for_second_daktylus', 'children': ['thirdF', 'fourthF', 'firstF', 'secondF']}, 
-	{'name': 'no_daktylus_found', 'on_enter': '_make_daktyle(12)'},
+	{'name': 'no_daktylus_found', 'on_enter': '_make_daktyle'},
 	{'name': 'found_two_daktyles', 'on_enter': '_make_scansion', 'tags': 'accepted'}, 
 	'fallback'
 	]
@@ -324,11 +328,11 @@ class HFSA14(Annotator):
 			self._set_found()
 		elif self._search(2):
 			self.positions.append(2)
-			self.questions.add(3)
+			self.questions.append(3)
 			self._set_found()
 		elif self._search(3):
 			self.positions.append(3)
-			self.questions.add(2)
+			self.questions.append(2)
 		self.search_daktylus()
 		
 	def _search_second(self):
@@ -342,11 +346,11 @@ class HFSA14(Annotator):
 			self._set_found()
 		elif self._search(4):
 			self.positions.append(4)
-			self.questions.add(5)
+			self.questions.append(5)
 		elif self._search(5):
 			self.positions.append(5)
-			self.questions.add(4)
-			self.questions.add(6)
+			self.questions.append(4)
+			self.questions.append(6)
 		elif self._search(6):
 			self.positions.append(6)
 			self.questions(5)
@@ -388,6 +392,9 @@ class HFSA14(Annotator):
 				return
 		elif 8 in self.positions:
 			self.scansion = '-- -- -- -** -** -X'
+			
+	def _make_daktyle(self):
+		Annotator._make_daktyle(self, 12)
 		
 	def _search(self, position):
 		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):

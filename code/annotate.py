@@ -84,7 +84,7 @@ for line in lines:
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
-			scansion = hfsa14.scansio + ' for fallback'
+			scansion = hfsa14.scansion + ' for fallback'
 			hfsa14.not_found()
 	
 	elif syllable_count == 15:
