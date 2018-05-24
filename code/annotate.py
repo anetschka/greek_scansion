@@ -45,7 +45,7 @@ for line in lines:
 	text = prep.normalise(vals[1])
 
 	#signal very short verses
-	if prep.get_verse_length(text) < 4:
+	if prep.get_verse_length(text) <= 5:
 		short_counter+=1
 	#selection of functions for syllabification
 	##syllabified = prep.simple_syllabify(text)

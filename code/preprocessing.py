@@ -87,6 +87,7 @@ class preprocessor(object):
 		text = re.sub(r'ά', 'α', text)
 	
 		text = re.sub(r'ῒ', 'ϊ', text)
+		text = re.sub(r'ΐ', 'ϊ', text)
 		#text = re.sub(r'ϊ', 'ι', text) 
 		text = re.sub(r'ὶ', 'ι', text) 
 		text = re.sub(r'ί', 'ι', text) 
@@ -233,15 +234,16 @@ class preprocessor(object):
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		clusters = ['βδ', 'βλ', 'βρ', 'γδ', 'γλ', 'γμ', 'γν', 'γρ', 'δμ', 'δν', 'δρ', 'θλ', 'θμ', 'θν', 'θρ', 'κλ', 'κμ', 'κν', 'κρ', 'κτ', 'μν', 'πλ', 'πν', 'πρ', 'πτ', 'σβ', 'σγ', 'σθ', 'σκ', 'σμ', 'σπ', 'στ', 'σφ', 'σχ', 'τλ', 'τμ', 'τν', 'τρ', 'φθ', 'φλ', 'φν', 'φρ', 'χθ', 'χλ', 'χμ', 'χν', 'χρ']
 		#handling of prepositions
-		match = re.search(preps, text)
-		if match:
-			text = re.sub(preps, match.group()[:-4] + ' ' + match.group()[-4:], text)
+		matches = re.findall(preps, text)
+		for match in matches:
+			found = re.search(match, text)
+			text = re.sub(match, found.group() + ' ', text)
 		cleaned = re.sub(r'[,:\.]', '', text)
 		letters = list(cleaned)
 		syllabified = ''
 		for index in range(0, len(letters)):
-			#first and last letter
-			if index == 0 or index == len(letters):
+			if index == len(letters)-1 and letters[index-1] in vowels and letters[index] in vowels and (letters[index-1] + letters[index]) not in diphtongs:
+				syllabified+='.'
 				syllabified+=letters[index]
 			#consonant between vowels
 			elif index > 0 and index < len(letters)-1 and letters[index] in consonants and letters[index-1] in vowels and letters[index+1] in vowels:
@@ -255,18 +257,18 @@ class preprocessor(object):
 			elif index < len(letters)-1 and letters[index-1] in vowels and letters[index] in consonants and letters[index+1] in consonants and (letters[index] + letters[index+1] not in clusters):
 				syllabified+=letters[index]
 				syllabified+='.'
-			#vowel before diphtong (new)
+			#vowel before diphtong
 			elif index < len(letters)-2 and letters[index] in vowels and (letters[index+1] + letters[index+2] in diphtongs):
 				syllabified+=letters[index]
 				syllabified+='.'
-			#first vowel of diphtong (new)
+			#first vowel of diphtong
 			elif index < len(letters)-1 and (letters[index] + letters[index+1] in diphtongs):
 				syllabified+=letters[index]
-			#second vowel of diphtong (new)
+			#second vowel of diphtong
 			elif index > 0 and index < len(letters)-1 and (letters[index-1] + letters[index] in diphtongs):
 				syllabified+=letters[index]
 				syllabified+='.'
-			#sequence of vowels (new)
+			#sequence of vowels
 			elif index < len(letters)-2 and letters[index] in vowels and letters[index+1] in vowels and (letters[index+1] + letters[index+2] not in diphtongs):
 				syllabified+=letters[index]
 				syllabified+='.'
