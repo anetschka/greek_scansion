@@ -1,5 +1,6 @@
 #NOTE: This requires Linux! Check CLTK documentation for more information: docs.cltk.org
 #Local files on Windows can be accessed from the mnt directory in the Linux environment.
+#another baseline can be created from this module: https://github.com/epilanthanomai/hexameter
 
 import re
 import sys
@@ -17,3 +18,4 @@ for line in lines:
 	print("{}\t{}\t{}".format(vals[0], vals[1], scansion), file=outfile)
 
 infile.close()
+outfile.close()

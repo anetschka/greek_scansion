@@ -15,6 +15,7 @@ outfile = codecs.open(sys.argv[2], 'w', 'utf-8')
 prepositions = codecs.open("resources/prepositions.txt", "r", "utf-8").readlines()
 
 lines = infile.readlines()
+infile.close()
 
 #get a verse selector: use this to select and process a random subset of verses
 #sel = selector()
@@ -130,3 +131,5 @@ for line in lines:
 print(syll_counter, ' incorrectly syllabified verses')
 print(short_counter, ' short verses')
 print(scansion_counter, 'annotated verses')
+
+outfile.close()

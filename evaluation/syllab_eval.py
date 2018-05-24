@@ -5,10 +5,12 @@ import codecs
 #file containing your syllabication
 datafile = codecs.open(sys.argv[1], 'r', 'utf-8')
 myverses = datafile.readlines()
+datafile.close()
 
 #gold file containing correct syllabication
 goldfile = codecs.open(sys.argv[2], 'r', 'utf-8')
 goldverses = goldfile.readlines()
+goldfile.close()
 
 #logging
 logfile = codecs.open(sys.argv[3], 'w', 'utf-8')
@@ -68,4 +70,6 @@ print(correct_items/evaluated_items)
 #calculate syllable correctness
 print('Correct syllables:')
 print(correct_syllabs/evaluated_syllabs)
+
+logfile.close()
 
