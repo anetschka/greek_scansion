@@ -237,7 +237,8 @@ class preprocessor(object):
 		matches = re.findall(preps, text)
 		for match in matches:
 			found = re.search(match, text)
-			text = re.sub(match, found.group() + ' ', text)
+			if found:
+				text = re.sub(match, found.group() + ' ', text)
 		cleaned = re.sub(r'[,:\.]', '', text)
 		letters = list(cleaned)
 		syllabified = ''

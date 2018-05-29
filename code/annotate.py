@@ -4,7 +4,7 @@ import codecs
 #classes for random data selection and preprocessing
 from preprocessing import selector, preprocessor
 #linguistic rules and hierarchical FSAs for verse processing
-from hAutomata import ruleset, HFSA13, HFSA14, HFSA15, HFSA16
+from hAutomata import ruleset, HFSA13, HFSA14, HFSA15, HFSA16, HFSA14Spondees
 
 ####MAIN PROGRAM####	
 	
@@ -25,7 +25,7 @@ infile.close()
 prep = preprocessor()
 
 hfsa13 = HFSA13('hfsa13')
-hfsa14 = HFSA14('hfsa14')
+hfsa14 = HFSA14Spondees('hfsa14')
 hfsa15 = HFSA15('hfsa15')
 hfsa16 = HFSA16('hfsa16')
 
@@ -80,7 +80,7 @@ for line in lines:
 			hfsa14.to_waiting()
 		hfsa14.set_text(syllabified)
 		hfsa14.start_analysis()
-		if hfsa14.state == 'found_two_daktyles':
+		if hfsa14.state == 'found_three_spondees':
 			scansion = hfsa14.scansion
 			scansion_counter += 1
 		else:
