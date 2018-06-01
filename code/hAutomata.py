@@ -141,279 +141,140 @@ class Annotator(object):
 class HFSA13(Annotator):
 
 	_states = [
-	{'name': 'waiting', 'on_enter': '_reset_positions'},
-	{'name': 'searching_for_daktylus', 'children': ['fifthF', 'thirdF', 'fourthF', 'firstF', 'secondF']},
-	{'name': 'daktylus_found'},
-	{'name': 'no_daktylus_found', 'on_enter': '_make_daktyle'},
-	'fallback'
+		{'name': 'waiting', 'on_enter': '_reset_positions'},
+		{'name': 'searching_for_first_spondeus', 'children': ['secondF', 'firstF']},
+		{'name': 'searching_for_second_spondeus', 'children': ['firstF', 'fourthF']},
+		{'name': 'searching_for_third_spondeus', 'children': ['fourthF', 'thirdF']},
+		{'name': 'searching_for_fourth_spondeus', 'children': ['thirdF', 'fifthF']},
+		{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
+		{'name': 'found_four_spondees', 'on_enter': '_make_scansion'},
+		'fallback'
 	]
-	
+
 	def __init__(self, name):
 		Annotator.__init__(self, name)
-		
 		self.machine = Machine(model=self, states=HFSA13._states, initial='waiting')
-		
-		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_daktylus_fifthF', after='_search_fifth')
-		self.machine.add_transition('found_daktylus', 'searching_for_daktylus_fifthF', 'daktylus_found')
-		self.machine.add_transition('not_found', 'searching_for_daktylus_fifthF', 'searching_for_daktylus_thirdF', after='_search_third')
-		self.machine.add_transition('found_daktylus', 'searching_for_daktylus_thirdF', 'daktylus_found')
-		self.machine.add_transition('not_found', 'searching_for_daktylus_thirdF', 'searching_for_daktylus_fourthF', after='_search_fourth')
-		self.machine.add_transition('found_daktylus', 'searching_for_daktylus_fourthF', 'daktylus_found')
-		self.machine.add_transition('not_found', 'searching_for_daktylus_fourthF', 'searching_for_daktylus_firstF', after='_search_first')
-		self.machine.add_transition('found_daktylus', 'searching_for_daktylus_firstF', 'daktylus_found')
-		self.machine.add_transition('not_found', 'searching_for_daktylus_firstF', 'searching_for_daktylus_secondF', after='_search_second')
-		self.machine.add_transition('found_daktylus', 'searching_for_daktylus_secondF', 'daktylus_found')
-		self.machine.add_transition('not_found', 'searching_for_daktylus_secondF', 'no_daktylus_found')
-		self.machine.add_transition('not_found', 'no_daktylus_found', 'fallback')
-		
-		
-	def _search_fifth(self):
-		if self._search_short(10) and self._search_short(11):
-			self.scansion = '-- -- -- -- -** -X'
-			self.found_daktylus()
-		elif self._search_short(10):
-			self.positions.append(10)
-			self.questions.append(11)
-			self.not_found()
-		elif self._search_short(11):
-			self.positions.append(11)
-			self.questions.append(10)
-			self.not_found()
-		else:
-			self.not_found()
-		
-	def _search_third(self):
-		if self._search_short(6) and self._search_short(7):
-			self.scansion = '-- -- -** -- -- -X'
-			self.found_daktylus()
-		elif self._search_short(6):
-			self.positions.append(6)
-			self.questions.append(7)
-			self.not_found()
-		elif self._search_short(7):
-			self.positions.append(7)
-			self.questions.append(6)
-			self.not_found()
-		else:
-			self.not_found()
-	
-	def _search_fourth(self):
-		if self._search_short(8) and self._search_short(9):
-			self.scansion = '-- -- -- -** -- -X'
-			self.found_daktylus()
-		elif self._search_short(8):
-			self.positions.append(8)
-			self.questions.append(9)
-			self.not_found()
-		elif self._search_short(9):
-			self.positions.append(9)
-			self.questions.append(8)
-			self.not_found()
-		else:
-			self.not_found()
-	
-	def _search_first(self):
-		if self._search_short(2) and self._search_short(3):
-			self.scansion = '-** -- -- -- -- -X'
-			self.found_daktylus()
-		elif self._search_short(2):
-			self.positions.append(2)
-			self.questions.append(3)
-			self.not_found()
-		elif self._search_short(3):
-			self.positions.append(3)
-			self.questions.append(2)
-			self.not_found()
-		else:
-			self.not_found()
-		
-	def _search_second(self):
-		if self._search_short(4) and self._search_short(5):
-			self.scansion = '-- -** -- -- -- -X'
-			self.found_daktylus()
-		elif self._search_short(4):
-			self.positions.append(4)
-			self.questions.append(5)
-			self.not_found()
-		elif self._search_short(5):
-			self.positions.append(5)
-			self.questions.append(4)
-			self.not_found()
-		else:
-			self.not_found()
-		
-	def _make_daktyle(self):
-		Annotator._make_daktyle(self, 11)
-	
-#deprecated
-#TODO: delete
-class HFSA14(Annotator):
 
-	_states = [
-	{'name': 'waiting', 'on_enter': '_reset_positions'},
-	{'name': 'searching_for_first_daktylus', 'children': ['fifthF', 'thirdF', 'fourthF', 'firstF']}, 
-	{'name': 'searching_for_second_daktylus', 'children': ['thirdF', 'fourthF', 'firstF', 'secondF']}, 
-	{'name': 'no_daktylus_found', 'on_enter': '_make_daktyle'},
-	{'name': 'found_two_daktyles', 'on_enter': '_make_scansion'}, 
-	'fallback'
-	]
-	
-	def __init__(self, name):
-		Annotator.__init__(self, name)
-		self.machine = Machine(model=self, states=HFSA14._states, initial='waiting')
-		
-		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_daktylus_fifthF', after='_search_fifth')
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus_fifthF', 'searching_for_first_daktylus_thirdF', unless=[self._found_first], after='_search_third')
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus_fifthF', 'searching_for_second_daktylus_thirdF', conditions=[self._found_first], after='_search_third')
-		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_thirdF', 'found_two_daktyles', conditions=[self._found_second])
-		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_thirdF', 'searching_for_second_daktylus_fourthF', unless=[self._found_second], after='_search_fourth') 
-		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_fourthF', 'searching_for_second_daktylus_firstF', unless=[self._found_second], after='_search_first')
-		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_firstF', 'found_two_daktyles', conditions=[self._found_second])
-		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_firstF', 'searching_for_second_daktylus_secondF', unless=[self._found_second], after='_search_second')
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus_thirdF', 'searching_for_first_daktylus_fourthF', unless=[self._found_first], after='_search_fourth')
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus_thirdF', 'searching_for_second_daktylus_fourthF', conditions=[self._found_first], after='_search_fourth')
-		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_fourthF', 'found_two_daktyles', conditions=[self._found_second])	
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus_fourthF', 'searching_for_first_daktylus_firstF', unless=[self._found_first], after='_search_first')
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus_fourthF', 'searching_for_second_daktylus_firstF', conditions=[self._found_first], after='_search_first')
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus_firstF', 'no_daktylus_found', unless=[self._found_first])
-		self.machine.add_transition('search_daktylus', 'searching_for_first_daktylus_firstF', 'searching_for_second_daktylus_secondF', conditions=[self._found_first], after='_search_second')
-		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_secondF', 'found_two_daktyles', conditions=[self._found_second])
-		self.machine.add_transition('search_daktylus', 'found_two_daktyles', 'no_daktylus_found')
-		self.machine.add_transition('search_daktylus', 'searching_for_second_daktylus_secondF', 'no_daktylus_found', unless=[self._found_second])
-		self.machine.add_transition('not_found', 'no_daktylus_found', 'fallback')
+		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus_secondF', after='_search_second')
+		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_secondF', 'searching_for_first_spondeus_firstF', unless=[self._found_first], after='_search_first')
+		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_firstF', 'no_spondeus_found', unless=[self._found_first])
+		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_secondF', 'searching_for_second_spondeus_firstF', conditions=[self._found_first], after='_search_first')
+		self.machine.add_transition('search_spondeus', 'searching_for_second_spondeus_firstF', 'searching_for_second_spondeus_fourthF', unless=[self._found_second], after='_search_fourth')
+		self.machine.add_transition('search_spondeus', 'searching_for_second_spondeus_fourthF', 'no_spondeus_found', unless=[self._found_second])
+		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_firstF', 'searching_for_second_spondeus_fourthF', conditions=[self._found_first], after='_search_fourth')
+		self.machine.add_transition('search_spondeus', 'searching_for_second_spondeus_firstF', 'searching_for_third_spondeus_fourthF', conditions=[self._found_second], after='_search_fourth')
+		self.machine.add_transition('search_spondeus', 'searching_for_third_spondeus_fourthF', 'searching_for_third_spondeus_thirdF', unless=[self._found_third], after='_search_third')
+		self.machine.add_transition('search_spondeus', 'searching_for_third_spondeus_thirdF', 'no_spondeus_found', unless=[self._found_third])
+		self.machine.add_transition('search_spondeus', 'searching_for_second_spondeus_fourthF', 'searching_for_third_spondeus_thirdF', conditions=[self._found_second], after='_search_third')
+		self.machine.add_transition('search_spondeus', 'searching_for_third_spondeus_thirdF', 'searching_for_fourth_spondeus_fifthF', conditions=[self._found_third], after='_search_fifth')
+		self.machine.add_transition('search_spondeus', 'searching_for_fourth_spondeus_fifthF', 'no_spondeus_found', unless=[self._found_fourth])
+		self.machine.add_transition('search_spondeus', 'searching_for_fourth_spondeus_fifthF', 'found_four_spondees', conditions=[self._found_fourth])
+		self.machine.add_transition('search_spondeus', 'searching_for_third_spondeus_fourthF', 'searching_for_fourth_spondeus_thirdF', conditions=[self._found_third], after='_search_fourth')
+		self.machine.add_transition('search_spondeus', 'searching_for_fourth_spondeus_thirdF', 'searching_for_fourth_spondeus_fifthF', unless=[self._found_fourth], after='_search_fifth')
+		self.machine.add_transition('search_spondeus', 'searching_for_fourth_spondeus_thirdF', 'found_four_spondees', conditions=[self._found_fourth])
+		self.machine.add_transition('search_spondeus', 'found_four_spondees', 'no_spondeus_found')
+		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
+
+	def _search_second(self):
+		if self._search_long(3) and self._search_long(4):
+			self.positions.append(3)
+			self.positions.append(4)
+			self._set_found()
+		elif self._search_long(4) and self._search_long(5):
+			self.positions.append(4)
+			self.positions.append(5)
+			self._set_found()
+		elif self._search_long(3):
+			self.positions.append(3)
+		elif self._search_long(4):
+			self.positions.append(4)
+		elif self._search_long(5):
+			self.positions.append(5)
+		self.search_spondeus()
+
+	def _search_first(self):
+		if self._search_long(1) and self._search_long(2):
+			self.positions.append(1)
+			self.positions.append(2)
+			self._set_found()
+		elif self._search_long(1):
+			self.positions.append(1)
+		elif self._search_long(2):
+			self.positions.append(2)
+		self.search_spondeus()
+
+	def _search_fourth(self):
+		if self._search_long(7) and self._search_long(8):
+			self.positions.append(7)
+			self.positions.append(8)
+			self._set_found()
+		elif self._search_long(8) and self._search_long(9):
+			self.positions.append(8)
+			self.positions.append(9)
+			self._set_found()
+		elif self._search_long(7):
+			self.positions.append(7)
+		elif self._search_long(8):
+			self.positions.append(8)
+		elif self._search_long(9):
+			self.positions.append(9)
+		self.search_spondeus()
+
+	def _search_third(self):
+		if self._search_long(5) and self._search_long(6):
+			self.positions.append(5)
+			self.positions.append(6)
+			self._set_found()
+		elif self._search_long(6) and self._search_long(7):
+			self.positions.append(6)
+			self.positions.append(7)
+			self._set_found()
+		elif self._search_long(6):
+			self.positions.append(6)
+		elif self._search_long(7):
+			self.positions.append(7)
+		elif self._search_long(5):
+			self.positions.append(5)
+		self.search_spondeus()
 
 	def _search_fifth(self):
-		#search through a range of syllables, returning true only for safe cases
-		if self._search_short(11) and self._search_short(12):
-			self.positions.append(11)
-			self.positions.append(12)
-			self._set_found()
-		elif self._search_short(11):
-			self.positions.append(11)
-			self.questions.append(12)
-		elif self._search_short(12):
-			self.positions.append(12)
-			self.questions.append(11)
-		self.search_daktylus()
-		
-	def _search_third(self):
-		if self._search_short(6) and self._search_short(7):
-			self.positions.append(6)
-			self.positions.append(7)
-			self._set_found()
-		elif self._search_short(7) and self._search_short(8):
-			self.positions.append(7)
-			self.positions.append(8)
-			self._set_found()
-		elif self._search_short(6):
-			self.positions.append(6)
-			self.questions.append(7)
-		elif self._search_short(7):
-			self.positions.append(7)
-			self.questions.append(6)
-			self.questions.append(8)
-		elif self._search_short(8):
-			self.positions.append(8)
-			self.questions.append(7)
-		self.search_daktylus()
-	
-	def _search_fourth(self):
-		if self._search_short(8) and self._search_short(9):
-			self.positions.append(8)
-			self.positions.append(9)
-			self._set_found()
-		elif self._search_short(9) and self._search_short(10):
-			self.positions.append(9)
+		if self._search_long(10) and self._search_long(11):
 			self.positions.append(10)
+			self.positions.append(11)
 			self._set_found()
-		elif self._search_short(8):
-			self.positions.append(8)
-			self.questions.append(9)
-		elif self._search_short(9):
-			self.positions.append(9)
-			self.questions.append(10)
-			self.questions.append(8)
-		elif self._search_short(10):
+		elif self._search_long(10):
 			self.positions.append(10)
-			self.questions.append(9)
-		self.search_daktylus()
-	
-	def _search_first(self):
-		if self._search_short(2) and self._search_short(3):
-			self.positions.append(2)
-			self.positions.append(3)
-			self._set_found()
-		elif self._search_short(2):
-			self.positions.append(2)
-			self.questions.append(3)
-			self._set_found()
-		elif self._search_short(3):
-			self.positions.append(3)
-			self.questions.append(2)
-		self.search_daktylus()
-		
-	def _search_second(self):
-		if self._search_short(4) and self._search_short(5):
-			self.positions.append(4)
-			self.positions.append(5)
-			self._set_found()
-		elif self._search_short(5) and self._search_short(6):
-			self.positions.append(5)
-			self.positions.append(6)
-			self._set_found()
-		elif self._search_short(4):
-			self.positions.append(4)
-			self.questions.append(5)
-		elif self._search_short(5):
-			self.positions.append(5)
-			self.questions.append(4)
-			self.questions.append(6)
-		elif self._search_short(6):
-			self.positions.append(6)
-			self.questions.append(5)
-		self.search_daktylus()
-	
+		elif self._search_long(11):
+			self.positions.append(11)
+		self.search_spondeus()
+
 	def _make_scansion(self):
-		print(self.positions)
-		if 2 in self.positions and 3 in self.positions:
-			self.scansion = '-** '
-			if 5 in self.positions and 6 in self.positions:
-				self.scansion+='-** -- -- -- -X'
-			elif 7 in self.positions and 8 in self.positions:
-				self.scansion+='-- -** -- -- -X'			
-			elif 9 in self.positions and 10 in self.positions:
-				self.scansion+='-- -- -** -- -X'
-			elif 11 in self.positions and 12 in self.positions:
-				self.scansion+='-- -- -- -** -X'
-			else:
-				self.search_daktylus()
-		elif 4 in self.positions and 5 in self.positions:
-			self.scansion = '-- -** '
-			if 7 in self.positions and 8 in self.positions:
-				self.scansion+='-** -- -- -X'		
-			elif 9 in self.positions and 10 in self.positions:
-				self.scansion+='-- -** -- -X'
-			elif 11 in self.positions and 12 in self.positions:
-				self.scansion+='-- -- -** -X'
-			else:
-				self.search_daktylus()
-		elif 6 in self.positions and 7 in self.positions:
-			self.scansion = '-- -- -** '
-			if 9 in self.positions and 10 in self.positions:
-				self.scansion+='-** -- -X'
-			elif 11 in self.positions and 12 in self.positions:
-				self.scansion+='-- -** -X'
-			else:
-				self.search_daktylus()
-		elif 8 in self.positions and 9 in self.positions:
-			self.scansion = '-- -- -- -** -** -X'
+		for x in range(1,12):
+			if x not in self.positions:
+				self.questions.append(x)
+		#nr. 40
+		if 10 in self.questions and 11 in self.questions:
+			self.scansion = '-- -- -- -- -** -X'
+		#nr. 41
+		elif 8 in self.questions and 9 in self.questions:
+			self.scansion = '-- -- -- -** -- -X'
+		#nr. 42
+		elif 6 in self.questions and 7 in self.questions:
+			self.scansion = '-- -- -** -- -- -X'
+		#nr. 43
+		elif 4 in self.questions and 5 in self.questions:
+			self.scansion = '-- -** -- -- -- -X'
+		#nr. 44
+		elif 2 in self.questions and 3 in self.questions:
+			self.scansion = '-** -- -- -- -- -X'
 		else:
-			self.search_daktylus()
-			
-	def _make_daktyle(self):
-		Annotator._make_daktyle(self, 12)
+			self.search_spondeus()
 
-class HFSA14Spondees(Annotator):
+
+	def _make_spondeus(self):
+		Annotator._make_spondeus(self, 11)
+
+class HFSA14(Annotator):
 
 	_states = [
 		{'name': 'waiting', 'on_enter': '_reset_positions'},
@@ -427,7 +288,7 @@ class HFSA14Spondees(Annotator):
 
 	def __init__ (self, name):
 		Annotator.__init__(self, name)
-		self.machine = Machine(model=self, states=HFSA14Spondees._states, initial='waiting')
+		self.machine = Machine(model=self, states=HFSA14._states, initial='waiting')
 
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus_secondF', after='_search_second')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_secondF', 'searching_for_first_spondeus_firstF', unless=[self._found_first], after='_search_first')
@@ -512,7 +373,6 @@ class HFSA14Spondees(Annotator):
 			self.positions.append(7)
 		elif self._search_long(8):
 			self.positions.append(8)
-			self._set_found()
 		self.search_spondeus()
 		
 	def _search_fifth(self):
@@ -527,7 +387,6 @@ class HFSA14Spondees(Annotator):
 		self.search_spondeus()
 
 	def _make_scansion(self):
-		self.scansion = ''
 		for x in range(1,13):
 			if x not in self.positions:
 				self.questions.append(x)
@@ -542,8 +401,27 @@ class HFSA14Spondees(Annotator):
 			self.scansion = '-- -- -** -** -- -X'
 		#nr. 33
 		elif 2 in self.questions and 3 in self.questions and 11 in self.questions and 12 in self.questions:
-			self.scansion = '-** -- -- -- -** -X here'
-			#TODO: continue, remove hfsa14
+			self.scansion = '-** -- -- -- -** -X'
+		#nr. 34
+		elif 2 in self.questions and 3 in self.questions and 9 in self.questions and 10 in self.questions:
+			self.scansion = '-** -- -- -** -- -X'
+		#nr. 35
+		elif 2 in self.questions and 3 in self.questions and 7 in self.questions and 8 in self.questions:
+			self.scansion = '-** -- -** -- -- -X'
+		#nr. 36
+		elif 2 in self.questions and 3 in self.questions and 5 in self.questions and 6 in self.questions:
+			self.scansion = '-** -** -- -- -- -X'
+		#nr. 37
+		elif 4 in self.questions and 5 in self.questions and 11 in self.questions and 12 in self.questions:
+			self.scansion = '-- -** -- -- -** -X'
+		#nr. 38
+		elif 4 in self.questions and 5 in self.questions and 9 in self.questions and 10 in self.questions:
+			self.scansion = '-- -** -- -** -- -X'
+		#nr. 39
+		elif 4 in self.questions and 5 in self.questions and 7 in self.questions and 8 in self.questions:
+			self.scansion = '-- -** -** -- -- -X'
+		else:
+			self.search_spondeus()
 
 	def _make_spondeus(self):
 		Annotator._make_spondeus(self, 12)
@@ -644,7 +522,6 @@ class HFSA15(Annotator):
 			self.positions.append(7)
 		elif self._search_long(8):
 			self.positions.append(8)
-			self._set_found()
 		self.search_spondeus()
 		
 	def _search_fifth(self):
