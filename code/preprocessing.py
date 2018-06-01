@@ -285,6 +285,8 @@ class preprocessor(object):
 		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ] )', '\g<1>', resultsent)
 		#treatment of remaining accents
 		resultsent = re.sub(r'([ιυ])\.̈', '.\g<1>.', resultsent)
+		#last consonant in verse
+		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ])$', '\g<1>', resultsent)
 		#further cleaning
 		resultsent = re.sub(r'\.\.', '.', resultsent)
 		resultsent = re.sub(r'\. ', ' ', resultsent)

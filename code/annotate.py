@@ -31,8 +31,6 @@ hfsa16 = HFSA16('hfsa16')
 
 #only for tracking number of lines with obviously erroneous syllabification
 syll_counter = 0
-#only for tracking number of short lines
-short_counter = 0
 #sentences with scansion annotation
 scansion_counter = 0
 
@@ -45,9 +43,6 @@ for line in lines:
 	#preprocessing
 	text = prep.normalise(vals[1])
 
-	#signal very short verses
-	if prep.get_verse_length(text) <= 5:
-		short_counter+=1
 	#selection of functions for syllabification
 	##syllabified = prep.simple_syllabify(text)
 	##syllabified = prep.vowel_syllabify(text)
@@ -129,7 +124,6 @@ for line in lines:
 	
 #log	
 print(syll_counter, ' incorrectly syllabified verses')
-print(short_counter, ' short verses')
 print(scansion_counter, 'annotated verses')
 
 outfile.close()
