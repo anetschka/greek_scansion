@@ -7,14 +7,12 @@ class ruleset(object):
 		
 	#long by nature
 	def rule1(self, text, position):
-		text = re.split(r'[ \.]', text)
 		current = text[position-1]
 		if re.search(r'[ηω]', current):
 			return True
 		
 	#long by nature
 	def rule2(self, text, position):
-		text = re.split(r'[ \.]', text)
 		current = text[position-1]
 		#if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
 		if re.search(r'(υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
@@ -22,28 +20,24 @@ class ruleset(object):
 		
 	#long by position
 	def rule3(self, text, position):
-		text = re.split(r'[ \.]', text)
 		next = text[position]
 		if re.match(r'^(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', next):
 			return True
 		
 	#long by position
 	def rule4(self, text, position):
-		text = re.split(r'[ \.]', text)
 		next = text[position]
 		if re.match(r'([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
 			return True
 		
 	#muta cum liquida
 	def muta(self, text, position):
-		text = re.split(r'[ \.]', text)
 		next = text[position]
 		if re.match(r'[βγδπτκφχθ][λρνμ]', next):
 			return True
 		
 	#hiat
 	def hiat(self, text, position):
-		text = re.split(r'[ \.]', text)
 		current = text[position-1]
 		next = text[position]
 		if re.search(r'[αιουεωη]{1,*}', current) and re.match(r'[αιουεωη]{1,*}', next):

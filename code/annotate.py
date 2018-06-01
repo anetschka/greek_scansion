@@ -39,14 +39,14 @@ for line in lines:
 	scansion = ''
 	
 	vals = re.split(r'\t+', line.rstrip('\r?\n?'))
-	
+
 	#preprocessing
 	text = prep.normalise(vals[1])
 
 	#selection of functions for syllabification
 	##syllabified = prep.simple_syllabify(text)
 	##syllabified = prep.vowel_syllabify(text)
-	##syllabified = prep.cltk_syllabify(text)
+	#syllabified = prep.cltk_syllabify(text)
 	syllabified = prep.papakitsos_syllabify(text)
 	syllable_count = prep.count_syllables(syllabified)
 	
@@ -56,7 +56,7 @@ for line in lines:
 		scansion_counter += 1
 		
 	elif syllable_count == 13:
-		scansion = 'one daktylus must be found'
+		scansion = 'fpur spondees must be found'
 		if hfsa13.state != 'waiting':
 			hfsa13.to_waiting()
 		hfsa13.set_text(syllabified)
@@ -70,7 +70,7 @@ for line in lines:
 			hfsa13.not_found()
 		
 	elif syllable_count == 14:
-		scansion = 'two daktyles must be found'
+		scansion = 'three spondees must be found'
 		if hfsa14.state != 'waiting':
 			hfsa14.to_waiting()
 		hfsa14.set_text(syllabified)
