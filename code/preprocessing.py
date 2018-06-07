@@ -61,6 +61,7 @@ class preprocessor(object):
 		self.prep_pattern+=')'
 	
 	#removes accents, lowercases
+	#TODO: this needs to be systematised and shortened
 	def normalise(self, text):
 		#some regexes have to be applied more than once since diacritics can be combined
 		text = re.sub(r'ῆ', 'ηz', text) #replace circumflex by something that is easier to handle
@@ -83,7 +84,7 @@ class preprocessor(object):
 		text = re.sub(r'ὰ', 'α', text)
 		text = re.sub(r'ά', 'α', text)
 		text = re.sub(r'ἀ', 'α', text)
-		text = re.sub(r'ᾶ', 'α', text)
+		text = re.sub(r'ᾶ', 'αz', text)
 		text = re.sub(r'ἁ', 'α', text)
 		text = re.sub(r'ὰ', 'α', text)
 		text = re.sub(r'ᾳ', 'α', text)
@@ -99,7 +100,7 @@ class preprocessor(object):
 		text = re.sub(r'ΐ', 'ι', text) 
 		text = re.sub(r'ἱ', 'ι', text)
 		text = re.sub(r'ί', 'ι', text)
-		text = re.sub(r'ῖ', 'ι', text)
+		text = re.sub(r'ῖ', 'ιz', text)
 		text = re.sub(r'ὶ', 'ι', text)
 	
 		text = re.sub(r'Ἴ', 'Ι', text)
@@ -131,7 +132,7 @@ class preprocessor(object):
 		text = re.sub(r'ὺ', 'υ', text)
 
 		text = re.sub(r'ώ', 'ω', text)
-		text = re.sub(r'ῶ', 'ω', text)
+		text = re.sub(r'ῶ', 'ωz', text)
 		text = re.sub(r'ῳ', 'ω', text)
 		text = re.sub(r'ὼ', 'ω', text)
 		text = re.sub(r'ὥ', 'ω', text)
@@ -139,7 +140,7 @@ class preprocessor(object):
 		text = re.sub(r'ὤ', 'ω', text)
 		text = re.sub(r'ὠ', 'ω', text)
 		text = re.sub(r'ῶ', 'ωz', text)
-		text = re.sub(r'ᾧ', 'ῶ', text)
+		text = re.sub(r'ᾧ', 'ωz', text)
 		text = re.sub(r'ὡ', 'ω', text)
 		text = re.sub(r'ῶ', 'ωz', text)
 		text = re.sub(r'ῳ', 'ω', text)
@@ -232,8 +233,8 @@ class preprocessor(object):
 		resultsent = ''
 		#prepositions appearing in compounds
 		preps = re.compile(' '+self.prep_pattern+'[^\' ]{4}')
-		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
-		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η', 'ω']
+		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ', 'αιz', 'οιz', 'υιz', 'ειz', 'αυz', 'ευz', 'ουz', 'ηιz', 'ωιz', 'ηυz']
+		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η', 'ω', 'αz', 'ιz', 'οz', 'υz', 'εz', 'ηz', 'ωz']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		clusters = ['βδ', 'βλ', 'βρ', 'γδ', 'γλ', 'γμ', 'γν', 'γρ', 'δμ', 'δν', 'δρ', 'θλ', 'θμ', 'θν', 'θρ', 'κλ', 'κμ', 'κν', 'κρ', 'κτ', 'μν', 'πλ', 'πν', 'πρ', 'πτ', 'σβ', 'σγ', 'σθ', 'σκ', 'σμ', 'σπ', 'στ', 'σφ', 'σχ', 'τλ', 'τμ', 'τν', 'τρ', 'φθ', 'φλ', 'φν', 'φρ', 'χθ', 'χλ', 'χμ', 'χν', 'χρ']
 		#handling of prepositions
@@ -244,6 +245,7 @@ class preprocessor(object):
 				text = re.sub(match, found.group() + ' ', text)
 		cleaned = re.sub(r'[,:\.]', '', text)
 		letters = list(cleaned)
+		#process placeholder for circumflex together with preceding vowel
 		simple = []
 		for x in range(0, len(letters)-1):
 			if letters[x] == 'z':
@@ -251,6 +253,7 @@ class preprocessor(object):
 			if letters[x+1] == 'z':
 				letters[x] += letters[x+1]
 			simple.append(letters[x])
+		simple.append(letters[len(letters)-1])
 		syllabified = ''
 		for index in range(0, len(simple)):
 			if index == len(simple)-1 and simple[index-1] in vowels and simple[index] in vowels and (simple[index-1] + simple[index]) not in diphtongs:
@@ -287,8 +290,10 @@ class preprocessor(object):
 				syllabified+=simple[index]
 		resultsent+=syllabified	
 		
-		#treatment of elision
-		resultsent = re.sub(r'(.)\'\.? ', '.\g<1>', resultsent)
+		#treatment of elision: vowel pairs will be separate syllables even after elision
+		resultsent = re.sub("(?<=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])'.? (?=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])", " ", resultsent)
+		resultsent = re.sub("(?<![α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])'.? (?=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])", "", resultsent)
+		resultsent = re.sub("(?<=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])'.? (?![α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])", "", resultsent)		
 		#however, a single consonant should not be separated from the next syllable
 		resultsent = re.sub(r'(\.[ςβγδθκλμνπρστφχξζψ])\.', '\g<1>', resultsent)
 		#treatment of remaining accents
