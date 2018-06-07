@@ -11,9 +11,6 @@ from hAutomata import ruleset, HFSA13, HFSA14, HFSA15, HFSA16
 infile = codecs.open(sys.argv[1], 'r', 'utf-8')
 outfile = codecs.open(sys.argv[2], 'w', 'utf-8')
 
-#additional preposition list used for syllabification
-prepositions = codecs.open("resources/prepositions.txt", "r", "utf-8").readlines()
-
 lines = infile.readlines()
 infile.close()
 
