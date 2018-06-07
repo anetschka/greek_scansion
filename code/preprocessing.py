@@ -77,8 +77,9 @@ class preprocessor(object):
 		text = re.sub(r'ῃ', 'η', text)
 		text = re.sub(r'ῇ', 'ηz', text)
 	
-		text = re.sub(r'Ἄ', 'Α', text)
-		text = re.sub(r'Ἀ', 'Α', text)
+		text = re.sub(r'Ἆ', 'αz', text)
+		text = re.sub(r'Ἄ', 'α', text)
+		text = re.sub(r'Ἀ', 'α', text)
 	
 		text = re.sub(r'ἄ', 'α', text)
 		text = re.sub(r'ὰ', 'α', text)
@@ -181,7 +182,7 @@ class preprocessor(object):
 			resultsent+=str(display_word(syllabified))
 			resultsent+=str(' ')
 			
-		return re.split(r'[ \.]', resultsent.rstrip(' '))
+		return resultsent.rstrip(' ')
 		
 	#syllabifies words, removes punctuation, using a simple rule
 	def vowel_syllabify(self, text):
@@ -194,7 +195,7 @@ class preprocessor(object):
 			resultsent+=syllabified.rstrip('\.')
 			resultsent+=str(' ')
 		
-		return re.split(r'[ \.]', resultsent.rstrip(' '))
+		return resultsent.rstrip(' ')
 		
 	#syllabifies words, removes punctuation, re-implementing CLTK rules
 	#https://github.com/cltk/cltk/blob/master/cltk/prosody/greek/scanner.py
@@ -225,7 +226,7 @@ class preprocessor(object):
 			resultsent+=syllabified
 			resultsent+=str(' ')
 		
-		return re.split(r'[ \.]', resultsent.rstrip(' '))
+		return resultsent.rstrip(' ')
 		
 	#syllabifies words, removes punctuation, following the article by Papakitsos, E: "Computerized scansion of Ancient Greek Hexameter" in combination
 	#with a few other rules
@@ -239,10 +240,10 @@ class preprocessor(object):
 		clusters = ['βδ', 'βλ', 'βρ', 'γδ', 'γλ', 'γμ', 'γν', 'γρ', 'δμ', 'δν', 'δρ', 'θλ', 'θμ', 'θν', 'θρ', 'κλ', 'κμ', 'κν', 'κρ', 'κτ', 'μν', 'πλ', 'πν', 'πρ', 'πτ', 'σβ', 'σγ', 'σθ', 'σκ', 'σμ', 'σπ', 'στ', 'σφ', 'σχ', 'τλ', 'τμ', 'τν', 'τρ', 'φθ', 'φλ', 'φν', 'φρ', 'χθ', 'χλ', 'χμ', 'χν', 'χρ']
 		#handling of prepositions
 		matches = re.findall(preps, text)
-		for match in matches:
-			found = re.search(match, text)
-			if found:
-				text = re.sub(match, found.group() + ' ', text)
+		#for match in matches:
+		#	found = re.search(match, text)
+		#	if found:
+		#		text = re.sub(match, found.group() + ' ', text)
 		cleaned = re.sub(r'[,:\.]', '', text)
 		letters = list(cleaned)
 		#process placeholder for circumflex together with preceding vowel
@@ -256,7 +257,11 @@ class preprocessor(object):
 		simple.append(letters[len(letters)-1])
 		syllabified = ''
 		for index in range(0, len(simple)):
-			if index == len(simple)-1 and simple[index-1] in vowels and simple[index] in vowels and (simple[index-1] + simple[index]) not in diphtongs:
+			#first vowel in verse, before consonant and another vowel
+			if index == 0 and simple[index] in vowels and simple[index+1] in consonants and simple[index+2] in vowels:
+				syllabified+=simple[index]
+				syllabified+='.'
+			elif index == len(simple)-1 and simple[index-1] in vowels and simple[index] in vowels and (simple[index-1] + simple[index]) not in diphtongs:
 				syllabified+='.'
 				syllabified+=simple[index]
 			#consonant between vowels
@@ -292,24 +297,27 @@ class preprocessor(object):
 		
 		#treatment of elision: vowel pairs will be separate syllables even after elision
 		resultsent = re.sub("(?<=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])'.? (?=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])", " ", resultsent)
-		resultsent = re.sub("(?<![α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])'.? (?=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])", "", resultsent)
-		resultsent = re.sub("(?<=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])'.? (?![α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])", "", resultsent)		
+		resultsent = re.sub("(?<![α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])'.? (?=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])", "ß", resultsent)
+		resultsent = re.sub("(?<=[α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])'.? (?![α|ι|ο|υ|ε|η|ω|αz|ιz|οz|υz|εz|ηz|ωz])", "ß", resultsent)		
+		resultsent = re.sub(r'(.)ß', '.\g<1>', resultsent)
 		#however, a single consonant should not be separated from the next syllable
 		resultsent = re.sub(r'(\.[ςβγδθκλμνπρστφχξζψ])\.', '\g<1>', resultsent)
 		#treatment of remaining accents
 		resultsent = re.sub(r'([ιυ])\.̈', '.\g<1>.', resultsent)
+		resultsent = re.sub(r'ϊ', 'ι', resultsent)
 		#treatment of consonants at end of word
 		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ] )', '\g<1>', resultsent)
 		#last consonant in verse or word
 		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ])$', '\g<1>', resultsent)
+		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ])[\.;]', '\g<1>', resultsent)
 		#further cleaning
 		resultsent = re.sub(r'\.\.', '.', resultsent)
 		resultsent = re.sub(r'\. ', ' ', resultsent)
 		resultsent = re.sub(r' \.', ' ', resultsent)
 
-		syllabs = re.split(r'[ \.]', resultsent)
-		return syllabs
+		return resultsent
 		
 	#count the number of syllables in the input verse
 	def count_syllables(self, text):
-		return len(text)
+		syllables = re.split(r'[ \.]', text)
+		return len(syllables) 

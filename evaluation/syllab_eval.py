@@ -19,10 +19,12 @@ logfile = codecs.open(sys.argv[3], 'w', 'utf-8')
 mydic = {} #your syllabication
 golddic = {} #gold syllabication
 
-#read datafile (expected format: line code\tverse\tsyllabication\tscansion)
+#read datafile (expected format: line code\tarra\t[syllables]\tscansion)
 for verse in myverses:
 	contents = re.split(r'\t+', verse.rstrip('\r?\n?'))
-	simplified = re.sub(r'[\. ]', '#', contents[2])
+	syllabs = re.sub('zͅ', '', contents[2])
+	syllabs = re.sub('z', '', syllabs)
+	simplified = re.sub(r'[\. ]', '#', syllabs.rstrip('[\.;]'))
 	mydic[contents[0]] = simplified
 	
 #read goldfile (expected format: line code\tsyllabication)
@@ -48,6 +50,8 @@ for key in mydic.keys():
 			correct_items+=1
 		else:
 			print(key, file=logfile)
+			print(mydic[key], file=logfile)
+			print(golddic[key], file=logfile)
 		
 		#syllable-wise evaluation
 		goldsyllabs = re.split(r'#', golddic[key])

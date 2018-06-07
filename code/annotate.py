@@ -44,9 +44,9 @@ for line in lines:
 	text = prep.normalise(vals[1])
 
 	#selection of functions for syllabification
-	##syllabified = prep.simple_syllabify(text)
+	#syllabified = prep.simple_syllabify(text)
 	##syllabified = prep.vowel_syllabify(text)
-	#syllabified = prep.cltk_syllabify(text)
+	##syllabified = prep.cltk_syllabify(text)
 	syllabified = prep.papakitsos_syllabify(text)
 	syllable_count = prep.count_syllables(syllabified)
 	
@@ -59,7 +59,7 @@ for line in lines:
 		scansion = 'fpur spondees must be found'
 		if hfsa13.state != 'waiting':
 			hfsa13.to_waiting()
-		hfsa13.set_text(syllabified)
+		hfsa13.set_text(re.split(r'[ \.]', syllabified))
 		hfsa13.start_analysis()
 		if hfsa13.state == 'found_four_spondees':
 			scansion = hfsa13.scansion
@@ -73,7 +73,7 @@ for line in lines:
 		scansion = 'three spondees must be found'
 		if hfsa14.state != 'waiting':
 			hfsa14.to_waiting()
-		hfsa14.set_text(syllabified)
+		hfsa14.set_text(re.split(r'[ \.]', syllabified))
 		hfsa14.start_analysis()
 		if hfsa14.state == 'found_three_spondees':
 			scansion = hfsa14.scansion
@@ -87,7 +87,7 @@ for line in lines:
 		scansion = 'two spondees must be found'
 		if hfsa15.state != 'waiting':
 			hfsa15.to_waiting()
-		hfsa15.set_text(syllabified)
+		hfsa15.set_text(re.split(r'[ \.]', syllabified))
 		hfsa15.start_analysis()
 		if(hfsa15.state == 'found_two_spondees'):
 			scansion = hfsa15.scansion
@@ -101,7 +101,7 @@ for line in lines:
 		scansion = 'one spondeus must be found'
 		if hfsa16.state != 'waiting':
 			hfsa16.to_waiting()
-		hfsa16.set_text(syllabified)
+		hfsa16.set_text(re.split(r'[ \.]', syllabified))
 		hfsa16.start_analysis()
 		if(hfsa16.state == 'spondeus_found'):
 			scansion = hfsa16.scansion
