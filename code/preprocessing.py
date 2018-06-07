@@ -230,6 +230,7 @@ class preprocessor(object):
 		
 	#syllabifies words, removes punctuation, following the article by Papakitsos, E: "Computerized scansion of Ancient Greek Hexameter" in combination
 	#with a few other rules
+	#!NOTE that this function does NOT handle compound words. However, this should not affect hexameter scansion (too much).
 	def papakitsos_syllabify(self, text):
 		resultsent = ''
 		#prepositions appearing in compounds

@@ -15,11 +15,11 @@ goldfile.close()
 #logging
 logfile = codecs.open(sys.argv[3], 'w', 'utf-8')
 
-#ditionaries will hold verse information
+#dictionaries will hold verse information
 mydic = {} #your syllabication
 golddic = {} #gold syllabication
 
-#read datafile (expected format: line code\tarra\t[syllables]\tscansion)
+#read datafile (expected format: line code\tarra\tsyllabication\tscansion)
 for verse in myverses:
 	contents = re.split(r'\t+', verse.rstrip('\r?\n?'))
 	syllabs = re.sub('zͅ', '', contents[2])
