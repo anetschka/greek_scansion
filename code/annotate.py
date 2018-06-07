@@ -46,7 +46,8 @@ for line in lines:
 	##syllabified = prep.cltk_syllabify(text)
 	syllabified = prep.papakitsos_syllabify(text)
 	syllable_count = prep.count_syllables(syllabified)
-	
+	syllables = re.split(r'[ \.]', syllabified)
+
 	#scansion annotation
 	if syllable_count == 12:
 		scansion = '-- -- -- -- -- -X'
@@ -56,56 +57,56 @@ for line in lines:
 		scansion = 'fpur spondees must be found'
 		if hfsa13.state != 'waiting':
 			hfsa13.to_waiting()
-		hfsa13.set_text(re.split(r'[ \.]', syllabified))
+		hfsa13.set_text(text, syllables)
 		hfsa13.start_analysis()
 		if hfsa13.state == 'found_four_spondees':
-			scansion = hfsa13.scansion
+			scansion = hfsa13.verse.scansion
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
-			scansion = hfsa13.scansion + ' for fallback'
+			scansion = hfsa13.verse.scansion + ' for fallback'
 			hfsa13.not_found()
 		
 	elif syllable_count == 14:
 		scansion = 'three spondees must be found'
 		if hfsa14.state != 'waiting':
 			hfsa14.to_waiting()
-		hfsa14.set_text(re.split(r'[ \.]', syllabified))
+		hfsa14.set_text(text, syllables)
 		hfsa14.start_analysis()
 		if hfsa14.state == 'found_three_spondees':
-			scansion = hfsa14.scansion
+			scansion = hfsa14.verse.scansion
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
-			scansion = hfsa14.scansion + ' for fallback'
+			scansion = hfsa14.verse.scansion + ' for fallback'
 			hfsa14.not_found()
 	
 	elif syllable_count == 15:
 		scansion = 'two spondees must be found'
 		if hfsa15.state != 'waiting':
 			hfsa15.to_waiting()
-		hfsa15.set_text(re.split(r'[ \.]', syllabified))
+		hfsa15.set_text(text, syllables)
 		hfsa15.start_analysis()
 		if(hfsa15.state == 'found_two_spondees'):
-			scansion = hfsa15.scansion
+			scansion = hfsa15.verse.scansion
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
-			scansion = hfsa15.scansion + ' for fallback '
+			scansion = hfsa15.verse.scansion + ' for fallback '
 			hfsa15.not_found()
 		
 	elif syllable_count == 16:
 		scansion = 'one spondeus must be found'
 		if hfsa16.state != 'waiting':
 			hfsa16.to_waiting()
-		hfsa16.set_text(re.split(r'[ \.]', syllabified))
+		hfsa16.set_text(text, syllables)
 		hfsa16.start_analysis()
 		if(hfsa16.state == 'spondeus_found'):
-			scansion = hfsa16.scansion
+			scansion = hfsa16.verse.scansion
 			scansion_counter += 1
 		else:
 			print('not found, fallback required')
-			scansion = hfsa16.scansion + ' for fallback'
+			scansion = hfsa16.verse.scansion + ' for fallback'
 			hfsa16.not_found()
 		
 	elif syllable_count == 17:

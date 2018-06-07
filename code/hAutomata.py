@@ -8,7 +8,7 @@ class ruleset(object):
 	#long by nature
 	def rule1(self, text, position):
 		current = text[position-1]
-		if re.search(r'[ηω]', current):
+		if re.search(r'[ηωz]', current):
 			return True
 		
 	#long by nature
@@ -27,13 +27,13 @@ class ruleset(object):
 	#long by position
 	def rule4(self, text, position):
 		next = text[position]
-		if re.match(r'([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
+		if re.match(r'^([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
 			return True
 		
 	#muta cum liquida
 	def muta(self, text, position):
 		next = text[position]
-		if re.match(r'[βγδπτκφχθ][λρνμ]', next):
+		if re.match(r'^[βγδπτκφχθ][λρνμ]', next):
 			return True
 		
 	#hiat
@@ -43,14 +43,26 @@ class ruleset(object):
 		if re.search(r'[αιουεωη]{1,*}', current) and re.match(r'[αιουεωη]{1,*}', next):
 			return True
 
+#class representing verse object; it makes verse, syllables, and scansion available at all times
+class Verse(object):
+
+	def __init__(self):
+		self.verse = ''
+		self.syllables = ''
+		self.scansion = ''
+
+	def clear(self):
+		self.verse = ''
+		self.syllables = ''
+		self.scansion = ''
+
 #superclass encapsulating basic functionality
 class Annotator(object):
 
 	def __init__(self, name):
 		self.name = name
 		self.rules = ruleset()
-		self.text = ''
-		self.scansion = ''
+		self.verse = Verse()
 		self.positions = []
 		self.questions = []
 		self.first_found = False
@@ -61,14 +73,15 @@ class Annotator(object):
 	def _reset_positions(self):		
 		self.positions = []
 		self.questions = []
-		self.scansion = ''
+		self.verse.clear()
 		self.first_found = False
 		self.second_found = False
 		self.third_found = False
 		self.fourth_found = False
 		
-	def set_text(self, text):
-		self.text = text
+	def set_text(self, verse, syllables):
+		self.verse.verse = verse
+		self.verse.syllables = syllables
 			
 	def _set_found(self):
 		if not self.first_found:
@@ -104,32 +117,37 @@ class Annotator(object):
 		else:
 			return False
 			
-	def _make_daktyle(self, limit):
-		self.scansion = '-'
-		for x in range(2, limit+1):
-			if x in self.positions:
-				self.scansion+='*'
-			elif x in self.questions:
-				self.scansion+='?'
-			else:
-				self.scansion+='-'
-		self.scansion+='-X'
+	#def _make_daktyle(self, limit):
+	#	self.verse.scansion = '-'
+	#	for x in range(2, limit+1):
+	#		if x in self.positions:
+	#			self.verse.scansion+='*'
+	#		elif x in self.questions:
+	#			self.verse.scansion+='?'
+	#		else:
+	#			self.verse.scansion+='-'
+	#	self.verse.scansion+='-X'
 		
 	def _make_spondeus(self, limit):
-		self.scansion = '-'
+		self.verse.scansion = '-'
 		for x in range(2, limit+1):
 			if x in self.positions:
-				self.scansion+='-'
+				self.verse.scansion+='-'
 			else:
-				self.scansion+='?'
-		self.scansion+='-X'
+				self.verse.scansion+='?'
+		self.verse.scansion+='-X'
+
+	#function used to search the whole verse for long syllables (in fallback)
+	#TODO
+	def _search_whole(self):
+		pass
 		
 	def _search_short(self, position):
-		if not self.rules.rule1(self.text, position) and not self.rules.rule2(self.text, position) and not self.rules.rule3(self.text, position) and not self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
+		if not self.rules.rule1(self.verse.syllables, position) and not self.rules.rule2(self.verse.syllables, position) and not self.rules.rule3(self.verse.syllables, position) and not self.rules.rule4(self.verse.syllables, position) and not self.verse.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
 			return True
 			
 	def _search_long(self, position):
-		if self.rules.rule1(self.text, position) or self.rules.rule2(self.text, position) or self.rules.rule3(self.text, position) or self.rules.rule4(self.text, position) and not self.rules.muta(self.text, position) and not self.rules.hiat(self.text, position):
+		if self.rules.rule1(self.verse.syllables, position) or self.rules.rule2(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position) or self.rules.rule4(self.verse.syllables, position) and not self.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
 			return True
 
 class HFSA13(Annotator):
@@ -248,19 +266,19 @@ class HFSA13(Annotator):
 				self.questions.append(x)
 		#nr. 40
 		if 10 in self.questions and 11 in self.questions:
-			self.scansion = '-- -- -- -- -** -X'
+			self.verse.scansion = '-- -- -- -- -** -X'
 		#nr. 41
 		elif 8 in self.questions and 9 in self.questions:
-			self.scansion = '-- -- -- -** -- -X'
+			self.verse.scansion = '-- -- -- -** -- -X'
 		#nr. 42
 		elif 6 in self.questions and 7 in self.questions:
-			self.scansion = '-- -- -** -- -- -X'
+			self.verse.scansion = '-- -- -** -- -- -X'
 		#nr. 43
 		elif 4 in self.questions and 5 in self.questions:
-			self.scansion = '-- -** -- -- -- -X'
+			self.verse.scansion = '-- -** -- -- -- -X'
 		#nr. 44
 		elif 2 in self.questions and 3 in self.questions:
-			self.scansion = '-** -- -- -- -- -X'
+			self.verse.scansion = '-** -- -- -- -- -X'
 		else:
 			self.search_spondeus()
 
@@ -386,34 +404,34 @@ class HFSA14(Annotator):
 				self.questions.append(x)
 		#nr. 30
 		if 8 in self.questions and 9 in self.questions and 11 in self.questions and 12 in self.questions:
-			self.scansion = '-- -- -- -** -** -X'
+			self.verse.scansion = '-- -- -- -** -** -X'
 		#nr. 31
 		elif 6 in self.questions and 7 in self.questions and 11 in self.questions and 12 in self.questions:
-			self.scansion = '-- -- -** -- -** -X'
+			self.verse.scansion = '-- -- -** -- -** -X'
 		#nr. 32
 		elif 6 in self.questions and 7 in self.questions and 9 in self.questions and 10 in self.questions:
-			self.scansion = '-- -- -** -** -- -X'
+			self.verse.scansion = '-- -- -** -** -- -X'
 		#nr. 33
 		elif 2 in self.questions and 3 in self.questions and 11 in self.questions and 12 in self.questions:
-			self.scansion = '-** -- -- -- -** -X'
+			self.verse.scansion = '-** -- -- -- -** -X'
 		#nr. 34
 		elif 2 in self.questions and 3 in self.questions and 9 in self.questions and 10 in self.questions:
-			self.scansion = '-** -- -- -** -- -X'
+			self.verse.scansion = '-** -- -- -** -- -X'
 		#nr. 35
 		elif 2 in self.questions and 3 in self.questions and 7 in self.questions and 8 in self.questions:
-			self.scansion = '-** -- -** -- -- -X'
+			self.verse.scansion = '-** -- -** -- -- -X'
 		#nr. 36
 		elif 2 in self.questions and 3 in self.questions and 5 in self.questions and 6 in self.questions:
-			self.scansion = '-** -** -- -- -- -X'
+			self.verse.scansion = '-** -** -- -- -- -X'
 		#nr. 37
 		elif 4 in self.questions and 5 in self.questions and 11 in self.questions and 12 in self.questions:
-			self.scansion = '-- -** -- -- -** -X'
+			self.verse.scansion = '-- -** -- -- -** -X'
 		#nr. 38
 		elif 4 in self.questions and 5 in self.questions and 9 in self.questions and 10 in self.questions:
-			self.scansion = '-- -** -- -** -- -X'
+			self.verse.scansion = '-- -** -- -** -- -X'
 		#nr. 39
 		elif 4 in self.questions and 5 in self.questions and 7 in self.questions and 8 in self.questions:
-			self.scansion = '-- -** -** -- -- -X'
+			self.verse.scansion = '-- -** -** -- -- -X'
 		else:
 			self.search_spondeus()
 
@@ -531,35 +549,35 @@ class HFSA15(Annotator):
 		
 	def _make_scansion(self):
 		if 2 in self.positions:
-			self.scansion = '-- '
+			self.verse.scansion = '-- '
 			if 4 in self.positions:
-				self.scansion+= '-- -** -** -** -X'
+				self.verse.scansion+= '-- -** -** -** -X'
 			elif 7 in self.positions:
-				self.scansion+= '-** -- -** -** -X'
+				self.verse.scansion+= '-** -- -** -** -X'
 			elif 10 in self.positions:
-				self.scansion+= '-** -** -- -** -X'
+				self.verse.scansion+= '-** -** -- -** -X'
 			elif 13 in self.positions:
-				self.scansion+= '-** -** -** -- -X'
+				self.verse.scansion+= '-** -** -** -- -X'
 			else:
 				self.search_spondeus()
 		elif 5 in self.positions:
-			self.scansion = '-** -- '
+			self.verse.scansion = '-** -- '
 			if 7 in self.positions:
-				self.scansion+= '-- -** -** -X'
+				self.verse.scansion+= '-- -** -** -X'
 			elif 10 in self.positions:
-				self.scansion+= '-** -- -** -X'
+				self.verse.scansion+= '-** -- -** -X'
 			elif 13 in self.positions:
-				self.scansion+= '-** -** -- -X'
+				self.verse.scansion+= '-** -** -- -X'
 			else:
 				self.search_spondeus()
 		elif 8 in self.positions:
-			self.scansion = '-** -** -- '
+			self.verse.scansion = '-** -** -- '
 			if 10 in self.positions:
-				self.scansion+= '-- -** -X'
+				self.verse.scansion+= '-- -** -X'
 			elif 13 in self.positions:
-				self.scansion+= '-** -- -X'
+				self.verse.scansion+= '-** -- -X'
 		elif 11 in self.positions:
-			self.scansion = '-** -** -** -- -- -X'
+			self.verse.scansion = '-** -** -** -- -- -X'
 		else:
 			self.search_spondeus()
 			
@@ -595,7 +613,7 @@ class HFSA16(Annotator):
 	
 	def _search_second(self):
 		if self._search_long(4) and self._search_long(5):
-			self.scansion = '-** -- -** -** -** -X'
+			self.verse.scansion = '-** -- -** -** -** -X'
 			self.found_spondeus()
 		elif self._search_long(4):
 			self.positions.append(4)
@@ -608,14 +626,14 @@ class HFSA16(Annotator):
 		
 	def _search_first(self):
 		if self._search_long(2):
-			self.scansion = '-- -** -** -** -** -X'
+			self.verse.scansion = '-- -** -** -** -** -X'
 			self.found_spondeus()
 		else:
 			self.not_found()
 			
 	def _search_fourth(self):
 		if self._search_long(10) and self._search_long(11):
-			self.scansion = '-** -** -** -- -** -X'
+			self.verse.scansion = '-** -** -** -- -** -X'
 			self.found_spondeus()
 		elif self._search_long(10):
 			self.positions.append(10)
@@ -628,7 +646,7 @@ class HFSA16(Annotator):
 			
 	def _search_third(self):
 		if self._search_long(7) and self._search_long(8):
-			self.scansion = '-** -** -- -** -** -X'
+			self.verse.scansion = '-** -** -- -** -** -X'
 			self.found_spondeus()
 		elif self._search_long(7):
 			self.positions.append(7)
@@ -641,7 +659,7 @@ class HFSA16(Annotator):
 			
 	def _search_fifth(self):
 		if self._search_long(13) and self._search_long(14):
-			self.scansion = '-** -** -** -** -- -X'
+			self.verse.scansion = '-** -** -** -** -- -X'
 			self.found_spondeus()
 		elif self._search_long(13):
 			self.positions.append(13)
