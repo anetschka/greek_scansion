@@ -100,28 +100,16 @@ class Annotator(object):
 			self.fourth_found = True
 
 	def _found_first(self):
-		if self.first_found:
-			return True
-		else:
-			return False
+		return self.first_found
 		
 	def _found_second(self):
-		if self.second_found:
-			return True
-		else:
-			return False
+		return self.second_found
 
 	def _found_third(self):
-		if self.third_found:
-			return True
-		else:
-			return False
+		return self.third_found
 
 	def _found_fourth(self):
-		if self.fourth_found:
-			return True
-		else:
-			return False
+		return self.fourth_found
 			
 	#def _make_daktyle(self, limit):
 	#	self.verse.scansion = '-'
