@@ -8,7 +8,7 @@ class ruleset(object):
 	#long by nature
 	def rule1(self, text, position):
 		current = text[position-1]
-		if re.search(r'[ηωz]', current):
+		if re.search(r'[ηω]', current):
 			return True
 		
 	#long by nature
@@ -41,6 +41,12 @@ class ruleset(object):
 		current = text[position-1]
 		next = text[position]
 		if re.search(r'[αιουεωη]{1,*}', current) and re.match(r'[αιουεωη]{1,*}', next):
+			return True
+
+	#circumflex
+	def circumflex(self, text, position):
+		current = text[position-1]
+		if re.search(r'z', current):
 			return True
 
 #class representing verse object; it makes verse, syllables, and scansion available at all times
@@ -138,17 +144,35 @@ class Annotator(object):
 		self.verse.scansion+='-X'
 
 	#function used to search the whole verse for long syllables (in fallback)
-	#TODO
 	def _search_whole(self):
-		pass
-		
-	def _search_short(self, position):
-		if not self.rules.rule1(self.verse.syllables, position) and not self.rules.rule2(self.verse.syllables, position) and not self.rules.rule3(self.verse.syllables, position) and not self.rules.rule4(self.verse.syllables, position) and not self.verse.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
-			return True
+		s_units = list(self.verse.scansion)
+		for x in range(0, len(s_units)-1): #no need to scan last two syllabs
+			if s_units[x] == '?':
+				search_result = self._search_long(x+1)
+				if search_result:
+					s_units[x] = '-'
+		self.verse.scansion = ''.join(s_units)
+		#actually, we can already make some very obvious corrections
+		self.verse.scansion = re.sub(r'-\?-', '---', self.verse.scansion)
+		self.verse.scansion = re.sub(r'-\?\?-X', '-**-X', self.verse.scansion)
+		self.verse.scansion = re.sub(r'-\?-X', '---X', self.verse.scansion)
+
+	#probably wrong	
+	#def _search_short(self, position):
+	#	if not self.rules.rule1(self.verse.syllables, position) and not self.rules.rule2(self.verse.syllables, position) and not self.rules.rule3(self.verse.syllables, position) and not self.rules.rule4(self.verse.syllables, position) and not self.verse.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
+	#		return True
 			
 	def _search_long(self, position):
-		if self.rules.rule1(self.verse.syllables, position) or self.rules.rule2(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position) or self.rules.rule4(self.verse.syllables, position) and not self.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
+		if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
 			return True
+		elif (self.rules.rule1(self.verse.syllables, position) or self.rules.rule2(self.verse.syllables, position)) and not self.rules.hiat(self.verse.syllables, position):
+			return True
+		elif self.rules.rule4(self.verse.syllables, position) and not self.rules.muta(self.verse.syllables, position):
+			return True
+		else:
+			return False
+		#if self.rules.rule1(self.verse.syllables, position) or self.rules.rule2(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position) or self.rules.rule4(self.verse.syllables, position) and not self.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
+		#	return True
 
 class HFSA13(Annotator):
 
@@ -160,7 +184,7 @@ class HFSA13(Annotator):
 		{'name': 'searching_for_fourth_spondeus', 'children': ['thirdF', 'fifthF']},
 		{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
 		{'name': 'found_four_spondees', 'on_enter': '_make_scansion'},
-		'fallback'
+		{'name': 'fallback', 'on_enter': '_search_whole'}
 	]
 
 	def __init__(self, name):
@@ -295,7 +319,7 @@ class HFSA14(Annotator):
 		{'name': 'searching_for_third_spondeus', 'children': ['fourthF', 'thirdF', 'fifthF']},
 		{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
 		{'name': 'found_three_spondees', 'on_enter': '_make_scansion'},
-		'fallback'
+		{'name': 'fallback', 'on_enter': '_search_whole'}
 	]
 
 	def __init__ (self, name):
@@ -446,7 +470,7 @@ class HFSA15(Annotator):
 	{'name': 'searching_for_second_spondeus', 'children': ['firstF', 'fourthF', 'thirdF', 'fifthF']},
 	{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
 	{'name': 'found_two_spondees', 'on_enter': '_make_scansion'}, 
-	'fallback'
+	{'name': 'fallback', 'on_enter': '_search_whole'}
 	]
 
 	def __init__ (self, name):
@@ -591,7 +615,7 @@ class HFSA16(Annotator):
 	{'name': 'searching_for_spondeus', 'children': ['secondF', 'firstF', 'fourthF', 'thirdF', 'fifthF']},
 	{'name': 'spondeus_found'},
 	{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
-	'fallback'
+	{'name': 'fallback', 'on_enter': '_search_whole'}
 	]
 	
 	def __init__(self, name):

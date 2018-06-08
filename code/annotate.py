@@ -63,9 +63,9 @@ for line in lines:
 			scansion = hfsa13.verse.scansion
 			scansion_counter += 1
 		else:
-			print('not found, fallback required')
-			scansion = hfsa13.verse.scansion + ' for fallback'
+			scansion = hfsa13.verse.scansion
 			hfsa13.not_found()
+			scansion += '###' + hfsa13.verse.scansion + ' after complete search'
 		
 	elif syllable_count == 14:
 		scansion = 'three spondees must be found'
@@ -77,10 +77,10 @@ for line in lines:
 			scansion = hfsa14.verse.scansion
 			scansion_counter += 1
 		else:
-			print('not found, fallback required')
-			scansion = hfsa14.verse.scansion + ' for fallback'
+			scansion = hfsa14.verse.scansion
 			hfsa14.not_found()
-	
+			scansion += '###' + hfsa14.verse.scansion + ' after complete search'
+				
 	elif syllable_count == 15:
 		scansion = 'two spondees must be found'
 		if hfsa15.state != 'waiting':
@@ -91,9 +91,9 @@ for line in lines:
 			scansion = hfsa15.verse.scansion
 			scansion_counter += 1
 		else:
-			print('not found, fallback required')
-			scansion = hfsa15.verse.scansion + ' for fallback '
+			scansion = hfsa15.verse.scansion
 			hfsa15.not_found()
+			scansion += '###' + hfsa15.verse.scansion + ' after complete search'			
 		
 	elif syllable_count == 16:
 		scansion = 'one spondeus must be found'
@@ -105,9 +105,9 @@ for line in lines:
 			scansion = hfsa16.verse.scansion
 			scansion_counter += 1
 		else:
-			print('not found, fallback required')
-			scansion = hfsa16.verse.scansion + ' for fallback'
+			scansion = hfsa16.verse.scansion
 			hfsa16.not_found()
+			scansion += '###' + hfsa16.verse.scansion + ' after complete search'	
 		
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'

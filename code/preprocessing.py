@@ -3,8 +3,6 @@ import re
 import codecs
 #for random number generation
 from random import randint
-#for stripping diacritics
-import unicodedata
 #for simple syllabification
 from greek_accentuation.syllabify import syllabify, display_word
 
@@ -132,6 +130,8 @@ class preprocessor(object):
 		text = re.sub(r'ύ', 'υ', text)
 		text = re.sub(r'ὺ', 'υ', text)
 
+		text = re.sub(r'ῷ', 'ωz', text)
+		text = re.sub(r'ᾧ', 'ωz', text)
 		text = re.sub(r'ώ', 'ω', text)
 		text = re.sub(r'ῶ', 'ωz', text)
 		text = re.sub(r'ῳ', 'ω', text)
@@ -141,7 +141,6 @@ class preprocessor(object):
 		text = re.sub(r'ὤ', 'ω', text)
 		text = re.sub(r'ὠ', 'ω', text)
 		text = re.sub(r'ῶ', 'ωz', text)
-		text = re.sub(r'ᾧ', 'ωz', text)
 		text = re.sub(r'ὡ', 'ω', text)
 		text = re.sub(r'ῶ', 'ωz', text)
 		text = re.sub(r'ῳ', 'ω', text)
