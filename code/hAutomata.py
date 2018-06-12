@@ -1,4 +1,5 @@
 import re
+import transducer
 from transitions.extensions import HierarchicalMachine as Machine
 from transitions.extensions.states import add_state_features, Tags
 
@@ -75,6 +76,7 @@ class Annotator(object):
 		self.second_found = False
 		self.third_found = False
 		self.fourth_found = False
+		self.transducer = transducer.transducer()
 			
 	def _reset_positions(self):		
 		self.positions = []
@@ -144,12 +146,22 @@ class Annotator(object):
 		self.verse.scansion = re.sub(r'-\?-', '---', self.verse.scansion)
 		self.verse.scansion = re.sub(r'-\?\?-X', '-**-X', self.verse.scansion)
 		self.verse.scansion = re.sub(r'-\?-X', '---X', self.verse.scansion)
+		#apply finite-state transducer
+		results = self.transducer.apply(self.verse.scansion).extract_paths(output='dict')
+		#delete intermediate scansion
+		self.verse.scansion = ''
+		#we currently just select the solution that maximizes the weight
+		weight = 0
+		for input, outputs in results.items():
+			for output in outputs:
+				if output[1] > weight:
+					self.verse.scansion = output[0]
 
 	#probably wrong	
 	#def _search_short(self, position):
 	#	if not self.rules.rule1(self.verse.syllables, position) and not self.rules.rule2(self.verse.syllables, position) and not self.rules.rule3(self.verse.syllables, position) and not self.rules.rule4(self.verse.syllables, position) and not self.verse.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
 	#		return True
-			
+
 	def _search_long(self, position):
 		if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
 			return True

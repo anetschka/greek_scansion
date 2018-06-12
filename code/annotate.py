@@ -61,11 +61,11 @@ for line in lines:
 		hfsa13.start_analysis()
 		if hfsa13.state == 'found_four_spondees':
 			scansion = hfsa13.verse.scansion
-			scansion_counter += 1
 		else:
 			scansion = hfsa13.verse.scansion
 			hfsa13.not_found()
 			scansion += '###' + hfsa13.verse.scansion + ' after complete search'
+		scansion_counter += 1
 		
 	elif syllable_count == 14:
 		scansion = 'three spondees must be found'
@@ -75,11 +75,11 @@ for line in lines:
 		hfsa14.start_analysis()
 		if hfsa14.state == 'found_three_spondees':
 			scansion = hfsa14.verse.scansion
-			scansion_counter += 1
 		else:
 			scansion = hfsa14.verse.scansion
 			hfsa14.not_found()
 			scansion += '###' + hfsa14.verse.scansion + ' after complete search'
+		scansion_counter += 1
 				
 	elif syllable_count == 15:
 		scansion = 'two spondees must be found'
@@ -89,11 +89,11 @@ for line in lines:
 		hfsa15.start_analysis()
 		if(hfsa15.state == 'found_two_spondees'):
 			scansion = hfsa15.verse.scansion
-			scansion_counter += 1
 		else:
 			scansion = hfsa15.verse.scansion
 			hfsa15.not_found()
 			scansion += '###' + hfsa15.verse.scansion + ' after complete search'			
+		scansion_counter += 1
 		
 	elif syllable_count == 16:
 		scansion = 'one spondeus must be found'
@@ -103,11 +103,11 @@ for line in lines:
 		hfsa16.start_analysis()
 		if(hfsa16.state == 'spondeus_found'):
 			scansion = hfsa16.verse.scansion
-			scansion_counter += 1
 		else:
 			scansion = hfsa16.verse.scansion
 			hfsa16.not_found()
-			scansion += '###' + hfsa16.verse.scansion + ' after complete search'	
+			scansion += '###' + hfsa16.verse.scansion + ' after complete search'
+		scansion_counter += 1
 		
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
