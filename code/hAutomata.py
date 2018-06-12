@@ -148,7 +148,6 @@ class Annotator(object):
 		self.verse.scansion = re.sub(r'-\?-X', '---X', self.verse.scansion)
 		#apply finite-state transducer
 		results = self.transducer.apply(self.verse.scansion).extract_paths(output='dict')
-		#delete intermediate scansion
 		#we currently just select the solution that maximizes the weight
 		weight = 0
 		for input, outputs in results.items():
@@ -211,75 +210,88 @@ class HFSA13(Annotator):
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
 
 	def _search_second(self):
-		if self._search_long(3) and self._search_long(4):
+		third = self._search_long(3)
+		fourth = self._search_long(4)
+		fifth = self._search_long(5)
+		if third and fourth:
 			self.positions.append(3)
 			self.positions.append(4)
 			self._set_found()
-		elif self._search_long(4) and self._search_long(5):
+		elif fourth and fifth:
 			self.positions.append(4)
 			self.positions.append(5)
 			self._set_found()
-		elif self._search_long(3):
+		elif third:
 			self.positions.append(3)
-		elif self._search_long(4):
+		elif fourth:
 			self.positions.append(4)
-		elif self._search_long(5):
+		elif fifth:
 			self.positions.append(5)
 		self.search_spondeus()
 
 	def _search_first(self):
-		if self._search_long(1) and self._search_long(2):
+		first = self._search_long(1)
+		second = self._search_long(2)
+		if first and second:
 			self.positions.append(1)
 			self.positions.append(2)
 			self._set_found()
-		elif self._search_long(1):
+		elif first:
 			self.positions.append(1)
-		elif self._search_long(2):
+		elif second:
 			self.positions.append(2)
 		self.search_spondeus()
 
 	def _search_fourth(self):
-		if self._search_long(7) and self._search_long(8):
+		seventh = self._search_long(7)
+		eigth = self._search_long(8)
+		ninth = self._search_long(9)
+		if seventh and eigth:
 			self.positions.append(7)
 			self.positions.append(8)
 			self._set_found()
-		elif self._search_long(8) and self._search_long(9):
+		elif eigth and ninth:
 			self.positions.append(8)
 			self.positions.append(9)
 			self._set_found()
-		elif self._search_long(7):
+		elif seventh:
 			self.positions.append(7)
-		elif self._search_long(8):
+		elif eigth:
 			self.positions.append(8)
-		elif self._search_long(9):
+		elif ninth:
 			self.positions.append(9)
 		self.search_spondeus()
 
 	def _search_third(self):
-		if self._search_long(5) and self._search_long(6):
+		fifth = self._search_long(5)
+		sixth = self._search_long(6)
+		seventh = self._search_long(7)
+		if fifth and sixth:
 			self.positions.append(5)
 			self.positions.append(6)
 			self._set_found()
-		elif self._search_long(6) and self._search_long(7):
+		elif sixth and seventh:
 			self.positions.append(6)
 			self.positions.append(7)
 			self._set_found()
-		elif self._search_long(6):
+		elif sixth:
 			self.positions.append(6)
-		elif self._search_long(7):
+		elif seventh:
 			self.positions.append(7)
-		elif self._search_long(5):
+		elif fifth:
 			self.positions.append(5)
 		self.search_spondeus()
 
 	def _search_fifth(self):
-		if self._search_long(10) and self._search_long(11):
+		tenth = self._search_long(10)
+		eleventh = self._search_long(11)
+		if tenth and eleventh:
 			self.positions.append(10)
 			self.positions.append(11)
 			self._set_found()
-		elif self._search_long(10):
+		elif tenth:
 			self.positions.append(10)
-		elif self._search_long(11):
+		elif eleventh:
 			self.positions.append(11)
 		self.search_spondeus()
 
@@ -349,75 +361,88 @@ class HFSA14(Annotator):
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
 
 	def _search_second(self):
-		if self._search_long(3) and self._search_long(4):
+		third = self._search_long(3)
+		fourth = self._search_long(4)
+		fifth = self._search_long(5)
+		if third and fourth:
 			self.positions.append(3)
 			self.positions.append(4)
 			self._set_found()
-		elif self._search_long(4) and self._search_long(5):
+		elif fourth and fifth:
 			self.positions.append(4)
 			self.positions.append(5)
 			self._set_found()
-		elif self._search_long(3):
+		elif third:
 			self.positions.append(3)
-		elif self._search_long(4):
+		elif fourth:
 			self.positions.append(4)
-		elif self._search_long(5):
+		elif fifth:
 			self.positions.append(5)
 		self.search_spondeus()
 
 	def _search_first(self):
-		if self._search_long(1) and self._search_long(2):
+		first = self._search_long(1)
+		second = self._search_long(2)
+		if first and second:
 			self.positions.append(1)
 			self.positions.append(2)
 			self._set_found()
-		elif self._search_long(1):
+		elif first:
 			self.positions.append(1)
-		elif self._search_long(2):
+		elif second:
 			self.positions.append(2)
 		self.search_spondeus()
 		
 	def _search_fourth(self):
-		if self._search_long(8) and self._search_long(9):
+		eigth = self._search_long(8)
+		ninth = self._search_long(9)
+		tenth = self._search_long(10)
+		if eigth and ninth:
 			self.positions.append(8)
 			self.positions.append(9)
 			self._set_found()
-		elif self._search_long(9) and self._search_long(10):
+		elif ninth and tenth:
 			self.positions.append(9)
 			self.positions.append(10)
 			self._set_found()
-		elif self._search_long(8):
+		elif eigth:
 			self.positions.append(8)
-		elif self._search_long(9):
+		elif ninth:
 			self.positions.append(9)
-		elif self._search_long(10):
+		elif tenth:
 			self.positions.append(10)
 		self.search_spondeus()
 		
 	def _search_third(self):
-		if self._search_long(7) and self._search_long(8):
+		sixth = self._search_long(6)
+		seventh = self._search_long(7)
+		eigth = self._search_long(8)
+		if seventh and eigth:
 			self.positions.append(7)
 			self.positions.append(8)
 			self._set_found()
-		elif self._search_long(6) and self._search_long(7):
+		elif sixth and seventh:
 			self.positions.append(6)
 			self.positions.append(7)
 			self._set_found()
-		elif self._search_long(6):
+		elif sixth:
 			self.positions.append(6)
-		elif self._search_long(7):
+		elif seventh:
 			self.positions.append(7)
-		elif self._search_long(8):
+		elif eigth:
 			self.positions.append(8)
 		self.search_spondeus()
 		
 	def _search_fifth(self):
-		if self._search_long(11) and self._search_long(12):
+		eleventh = self._search_long(11)
+		twelfth = self._search_long(12)
+		if eleventh and twelfth:
 			self.positions.append(11)
 			self.positions.append(12)
 			self._set_found()
-		elif self._search_long(11):
+		elif eleventh:
 			self.positions.append(11)
-		elif self._search_long(12):
+		elif twelfth:
 			self.positions.append(12)
 		self.search_spondeus()
 
@@ -498,75 +523,88 @@ class HFSA15(Annotator):
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
 		
 	def _search_second(self):
-		if self._search_long(3) and self._search_long(4):
+		third = self._search_long(3)
+		fourth = self._search_long(4)
+		fifth = self._search_long(5)
+		if third and fourth:
 			self.positions.append(3)
 			self.positions.append(4)
 			self._set_found()
-		elif self._search_long(4) and self._search_long(5):
+		elif fourth and fifth:
 			self.positions.append(4)
 			self.positions.append(5)
 			self._set_found()
-		elif self._search_long(3):
+		elif third:
 			self.positions.append(3)
-		elif self._search_long(4):
+		elif fourth:
 			self.positions.append(4)
-		elif self._search_long(5):
+		elif fifth:
 			self.positions.append(5)
 		self.search_spondeus()
 		
 	def _search_first(self):
-		if self._search_long(1) and self._search_long(2):
+		first = self._search_long(1)
+		second = self._search_long(2)
+		if first and second:
 			self.positions.append(1)
 			self.positions.append(2)
 			self._set_found()
-		elif self._search_long(1):
+		elif first:
 			self.positions.append(1)
-		elif self._search_long(2):
+		elif second:
 			self.positions.append(2)
 		self.search_spondeus()
 		
 	def _search_fourth(self):
-		if self._search_long(10) and self._search_long(11):
+		ninth = self._search_long(9)
+		tenth = self._search_long(10)
+		eleventh = self._search_long(11)
+		if tenth and eleventh:
 			self.positions.append(10)
 			self.positions.append(11)
 			self._set_found()
-		elif self._search_long(9) and self._search_long(10):
+		elif ninth and tenth:
 			self.positions.append(9)
 			self.positions.append(10)
 			self._set_found()
-		elif self._search_long(9):
+		elif ninth:
 			self.positions.append(9)
-		elif self._search_long(10):
+		elif tenth:
 			self.positions.append(10)
-		elif self._search_long(11):
+		elif eleventh:
 			self.positions.append(11)
 		self.search_spondeus()
 		
 	def _search_third(self):
-		if self._search_long(7) and self._search_long(8):
+		sixth = self._search_long(6)
+		seventh = self._search_long(7)
+		eigth = self._search_long(8)
+		if seventh and eigth:
 			self.positions.append(7)
 			self.positions.append(8)
 			self._set_found()
-		elif self._search_long(6) and self._search_long(7):
+		elif sixth and seventh:
 			self.positions.append(6)
 			self.positions.append(7)
 			self._set_found()
-		elif self._search_long(6):
+		elif sixth:
 			self.positions.append(6)
-		elif self._search_long(7):
+		elif seventh:
 			self.positions.append(7)
-		elif self._search_long(8):
+		elif eigth:
 			self.positions.append(8)
 		self.search_spondeus()
 		
 	def _search_fifth(self):
-		if self._search_long(12) and self._search_long(13):
+		twelfth = self._search_long(12)
+		thirteenth = self._search_long(13)
+		if twelfth and thirteenth:
 			self.positions.append(12)
 			self.positions.append(13)
 			self._set_found()
-		elif self._search_long(12):
+		elif twelfth:
 			self.positions.append(12)
-		elif self._search_long(13):
+		elif thirteenth:
 			self.positions.append(13)
 		self.search_spondeus()
 		
@@ -635,13 +673,15 @@ class HFSA16(Annotator):
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
 	
 	def _search_second(self):
-		if self._search_long(4) and self._search_long(5):
+		fourth = self._search_long(4)
+		fifth = self._search_long(5)
+		if fourth and fifth:
 			self.verse.scansion = '-** -- -** -** -** -X'
 			self.found_spondeus()
-		elif self._search_long(4):
+		elif fourth:
 			self.positions.append(4)
 			self.not_found()
-		elif self._search_long(5):
+		elif fifth:
 			self.positions.append(5)
 			self.not_found()
 		else:
@@ -655,39 +695,45 @@ class HFSA16(Annotator):
 			self.not_found()
 			
 	def _search_fourth(self):
-		if self._search_long(10) and self._search_long(11):
+		tenth = self._search_long(10)
+		eleventh = self._search_long(11)
+		if tenth and eleventh:
 			self.verse.scansion = '-** -** -** -- -** -X'
 			self.found_spondeus()
-		elif self._search_long(10):
+		elif tenth:
 			self.positions.append(10)
 			self.not_found()
-		elif self._search_long(11):
+		elif eleventh:
 			self.positions.append(11)
 			self.not_found()
 		else:
 			self.not_found()
 			
 	def _search_third(self):
-		if self._search_long(7) and self._search_long(8):
+		seventh = self._search_long(7)
+		eigth = self._search_long(8)
+		if seventh and eigth:
 			self.verse.scansion = '-** -** -- -** -** -X'
 			self.found_spondeus()
-		elif self._search_long(7):
+		elif seventh:
 			self.positions.append(7)
 			self.not_found()
-		elif self._search_long(8):
+		elif eigth:
 			self.positions.append(8)
 			self.not_found()
 		else:
 			self.not_found()
 			
 	def _search_fifth(self):
-		if self._search_long(13) and self._search_long(14):
+		thirteenth = self._search_long(13)
+		fourteenth = self._search_long(14)
+		if thirteenth and fourteenth:
 			self.verse.scansion = '-** -** -** -** -- -X'
 			self.found_spondeus()
-		elif self._search_long(13):
+		elif thirteenth:
 			self.positions.append(13)
 			self.not_found()
-		elif self._search_long(14):
+		elif fourteenth:
 			self.positions.append(14)
 			self.not_found()
 		else:
