@@ -149,7 +149,6 @@ class Annotator(object):
 		#apply finite-state transducer
 		results = self.transducer.apply(self.verse.scansion).extract_paths(output='dict')
 		#delete intermediate scansion
-		self.verse.scansion = ''
 		#we currently just select the solution that maximizes the weight
 		weight = 0
 		for input, outputs in results.items():
