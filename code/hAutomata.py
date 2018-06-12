@@ -51,7 +51,7 @@ class ruleset(object):
 			return True
 
 #class representing verse object; it makes verse, syllables, and scansion available at all times
-class Verse(object):
+class verse(object):
 
 	def __init__(self):
 		self.verse = ''
@@ -64,12 +64,12 @@ class Verse(object):
 		self.scansion = ''
 
 #superclass encapsulating basic functionality
-class Annotator(object):
+class annotator(object):
 
 	def __init__(self, name):
 		self.name = name
 		self.rules = ruleset()
-		self.verse = Verse()
+		self.verse = verse()
 		self.positions = []
 		self.questions = []
 		self.first_found = False
@@ -154,7 +154,7 @@ class Annotator(object):
 		else:
 			return False
 
-class HFSA13(Annotator):
+class HFSA13(annotator):
 
 	_states = [
 		{'name': 'waiting', 'on_enter': '_reset_positions'},
@@ -168,9 +168,8 @@ class HFSA13(Annotator):
 	]
 
 	def __init__(self, name):
-		Annotator.__init__(self, name)
+		annotator.__init__(self, name)
 		self.machine = Machine(model=self, states=HFSA13._states, initial='waiting')
-
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus_secondF', after='_search_second')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_secondF', 'searching_for_first_spondeus_firstF', unless=[self._found_first], after='_search_first')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_firstF', 'no_spondeus_found', unless=[self._found_first])
@@ -301,9 +300,9 @@ class HFSA13(Annotator):
 
 
 	def _make_spondeus(self):
-		Annotator._make_spondeus(self, 11)
+		annotator._make_spondeus(self, 11)
 
-class HFSA14(Annotator):
+class HFSA14(annotator):
 
 	_states = [
 		{'name': 'waiting', 'on_enter': '_reset_positions'},
@@ -316,9 +315,8 @@ class HFSA14(Annotator):
 	]
 
 	def __init__ (self, name):
-		Annotator.__init__(self, name)
+		annotator.__init__(self, name)
 		self.machine = Machine(model=self, states=HFSA14._states, initial='waiting')
-
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus_secondF', after='_search_second')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_secondF', 'searching_for_first_spondeus_firstF', unless=[self._found_first], after='_search_first')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_firstF', 'searching_for_first_spondeus_fourthF', unless=[self._found_first], after='_search_fourth')
@@ -466,9 +464,9 @@ class HFSA14(Annotator):
 			self.search_spondeus()
 
 	def _make_spondeus(self):
-		Annotator._make_spondeus(self, 12)
+		annotator._make_spondeus(self, 12)
 
-class HFSA15(Annotator):
+class HFSA15(annotator):
 
 	_states = [
 	{'name': 'waiting', 'on_enter': '_reset_positions'},
@@ -480,9 +478,8 @@ class HFSA15(Annotator):
 	]
 
 	def __init__ (self, name):
-		Annotator.__init__(self, name)
+		annotator.__init__(self, name)
 		self.machine = Machine(model=self, states=HFSA15._states, initial='waiting')
-		
 		self.machine.add_transition('start_analysis', 'waiting', 'searching_for_first_spondeus_secondF', after='_search_second')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_secondF', 'searching_for_first_spondeus_firstF', unless=[self._found_first], after='_search_first')
 		self.machine.add_transition('search_spondeus', 'searching_for_first_spondeus_secondF', 'searching_for_second_spondeus_firstF', conditions=[self._found_first], after='_search_first')
@@ -625,9 +622,9 @@ class HFSA15(Annotator):
 			self.search_spondeus()
 			
 	def _make_spondeus(self):
-		Annotator._make_spondeus(self, 13)
+		annotator._make_spondeus(self, 13)
 			
-class HFSA16(Annotator):
+class HFSA16(annotator):
 
 	_states = [
 	{'name': 'waiting', 'on_enter': '_reset_positions'},
@@ -638,9 +635,8 @@ class HFSA16(Annotator):
 	]
 	
 	def __init__(self, name):
-		Annotator.__init__(self, name)
+		annotator.__init__(self, name)
 		self.machine = Machine(model=self, states=HFSA16._states, initial='waiting')
-		
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='searching_for_spondeus_secondF', after='_search_second')
 		self.machine.add_transition('found_spondeus', 'searching_for_spondeus_secondF', 'spondeus_found')
 		self.machine.add_transition('not_found', 'searching_for_spondeus_secondF', 'searching_for_spondeus_firstF', after='_search_first')
@@ -722,4 +718,4 @@ class HFSA16(Annotator):
 			self.not_found()
 			
 	def _make_spondeus(self):
-		Annotator._make_spondeus(self, 14)
+		annotator._make_spondeus(self, 14)
