@@ -113,17 +113,6 @@ class Annotator(object):
 	def _found_fourth(self):
 		return self.fourth_found
 			
-	#def _make_daktyle(self, limit):
-	#	self.verse.scansion = '-'
-	#	for x in range(2, limit+1):
-	#		if x in self.positions:
-	#			self.verse.scansion+='*'
-	#		elif x in self.questions:
-	#			self.verse.scansion+='?'
-	#		else:
-	#			self.verse.scansion+='-'
-	#	self.verse.scansion+='-X'
-		
 	def _make_spondeus(self, limit):
 		self.verse.scansion = '-'
 		for x in range(2, limit+1):
@@ -155,11 +144,6 @@ class Annotator(object):
 				if output[1] > weight:
 					self.verse.scansion = output[0]
 
-	#probably wrong	
-	#def _search_short(self, position):
-	#	if not self.rules.rule1(self.verse.syllables, position) and not self.rules.rule2(self.verse.syllables, position) and not self.rules.rule3(self.verse.syllables, position) and not self.rules.rule4(self.verse.syllables, position) and not self.verse.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
-	#		return True
-
 	def _search_long(self, position):
 		if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
 			return True
@@ -169,8 +153,6 @@ class Annotator(object):
 			return True
 		else:
 			return False
-		#if self.rules.rule1(self.verse.syllables, position) or self.rules.rule2(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position) or self.rules.rule4(self.verse.syllables, position) and not self.rules.muta(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
-		#	return True
 
 class HFSA13(Annotator):
 

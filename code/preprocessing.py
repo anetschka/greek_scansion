@@ -44,19 +44,6 @@ class selector(object):
 
 #class for preprocessing
 class preprocessor(object):
-
-	#reads external preposition file
-	#def __init__(self):
-	#	self.prepositions = codecs.open('resources/long_prepositions.txt', 'r', 'utf-8').readlines()
-	#	preps = list(self.prepositions)
-	#	self.prepositions = sorted(preps, key=len, reverse=True)
-	#	self.prep_pattern = '('
-	#	for preposition in self.prepositions:
-	#		preposition = re.sub(r'\r?\n?', '', preposition)
-	#		self.prep_pattern+=preposition
-	#		self.prep_pattern+='|'
-	#	self.prep_pattern = self.prep_pattern[:-1]
-	#	self.prep_pattern+=')'
 	
 	#removes accents, lowercases
 	#TODO: this needs to be systematised and shortened
@@ -232,18 +219,10 @@ class preprocessor(object):
 	#!NOTE that this function does NOT handle compound words. However, this should not affect hexameter scansion (too much).
 	def papakitsos_syllabify(self, text):
 		resultsent = ''
-		#prepositions appearing in compounds
-		#preps = re.compile(' '+self.prep_pattern+'[^\' ]{4}')
 		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ', 'αιz', 'οιz', 'υιz', 'ειz', 'αυz', 'ευz', 'ουz', 'ηιz', 'ωιz', 'ηυz']
 		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η', 'ω', 'αz', 'ιz', 'οz', 'υz', 'εz', 'ηz', 'ωz']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		clusters = ['βδ', 'βλ', 'βρ', 'γδ', 'γλ', 'γμ', 'γν', 'γρ', 'δμ', 'δν', 'δρ', 'θλ', 'θμ', 'θν', 'θρ', 'κλ', 'κμ', 'κν', 'κρ', 'κτ', 'μν', 'πλ', 'πν', 'πρ', 'πτ', 'σβ', 'σγ', 'σθ', 'σκ', 'σμ', 'σπ', 'στ', 'σφ', 'σχ', 'τλ', 'τμ', 'τν', 'τρ', 'φθ', 'φλ', 'φν', 'φρ', 'χθ', 'χλ', 'χμ', 'χν', 'χρ']
-		#handling of prepositions
-		#matches = re.findall(preps, text)
-		#for match in matches:
-		#	found = re.search(match, text)
-		#	if found:
-		#		text = re.sub(match, found.group() + ' ', text)
 		cleaned = re.sub(r'[,:\.]', '', text)
 		letters = list(cleaned)
 		#process placeholder for circumflex together with preceding vowel
