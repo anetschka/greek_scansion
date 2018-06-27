@@ -4,7 +4,7 @@ import codecs
 #classes for random data selection and preprocessing
 from preprocessing import selector, preprocessor
 #linguistic rules and hierarchical FSAs for verse processing
-from hAutomata import ruleset, HFSA13, HFSA14, HFSA15, HFSA16
+from hAutomata import HFSA13, HFSA14, HFSA15, HFSA16
 
 ####MAIN PROGRAM####	
 	
@@ -54,7 +54,7 @@ for line in lines:
 		scansion_counter += 1
 		
 	elif syllable_count == 13:
-		scansion = 'fpur spondees must be found'
+		scansion = 'four spondees must be found'
 		if hfsa13.state != 'waiting':
 			hfsa13.to_waiting()
 		hfsa13.set_text(text, syllables)
@@ -65,7 +65,8 @@ for line in lines:
 		else:
 			scansion = hfsa13.verse.scansion
 			hfsa13.not_found()
-			scansion += '###' + hfsa13.verse.scansion + ' after complete search'
+			scansion = hfsa13.verse.scansion
+			#scansion += '###' + hfsa13.verse.scansion + ' after complete search'
 			#TODO: rather try to check whether fst has accepted the input string
 			if not re.search(r'\?', hfsa13.verse.scansion):
 				scansion_counter += 1
@@ -82,7 +83,8 @@ for line in lines:
 		else:
 			scansion = hfsa14.verse.scansion
 			hfsa14.not_found()
-			scansion += '###' + hfsa14.verse.scansion + ' after complete search'
+			scansion = hfsa14.verse.scansion
+			#scansion += '###' + hfsa14.verse.scansion + ' after complete search'
 			if not re.search(r'\?', hfsa14.verse.scansion):
 				scansion_counter += 1
 				
@@ -98,7 +100,8 @@ for line in lines:
 		else:
 			scansion = hfsa15.verse.scansion
 			hfsa15.not_found()
-			scansion += '###' + hfsa15.verse.scansion + ' after complete search'			
+			scansion = hfsa15.verse.scansion
+			#scansion += '###' + hfsa15.verse.scansion + ' after complete search'			
 			if not re.search(r'\?', hfsa15.verse.scansion):
 				scansion_counter += 1
 		
@@ -114,7 +117,8 @@ for line in lines:
 		else:
 			scansion = hfsa16.verse.scansion
 			hfsa16.not_found()
-			scansion += '###' + hfsa16.verse.scansion + ' after complete search'
+			scansion = hfsa16.verse.scansion
+			#scansion += '###' + hfsa16.verse.scansion + ' after complete search'
 			if not re.search(r'\?', hfsa16.verse.scansion):
 				scansion_counter += 1
 		

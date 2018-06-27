@@ -41,7 +41,7 @@ class ruleset(object):
 	def hiat(self, text, position):
 		current = text[position-1]
 		next = text[position]
-		if re.search(r'[αιουεωη]{1,*}', current) and re.match(r'[αιουεωη]{1,*}', next):
+		if re.search(r'[αιουεωη]{1,*}$', current) and re.match(r'^[αιουεωη]{1,*}', next):
 			return True
 
 	#circumflex
@@ -142,6 +142,7 @@ class annotator(object):
 		for input, outputs in results.items():
 			for output in outputs:
 				if output[1] > weight:
+					weight = output[1]
 					self.verse.scansion = output[0]
 
 	def _search_long(self, position):
