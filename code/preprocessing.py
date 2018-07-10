@@ -233,7 +233,8 @@ class preprocessor(object):
 			if letters[x+1] == 'z':
 				letters[x] += letters[x+1]
 			simple.append(letters[x])
-		simple.append(letters[len(letters)-1])
+		if letters[len(letters)-1] != 'z':
+			simple.append(letters[len(letters)-1])
 		syllabified = ''
 		for index in range(0, len(simple)):
 			#first vowel in verse, before consonant and another vowel

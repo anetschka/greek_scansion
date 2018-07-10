@@ -2,6 +2,7 @@ import re
 import transducer
 from transitions.extensions import HierarchicalMachine as Machine
 from transitions.extensions.states import add_state_features, Tags
+from preprocessing import preprocessor
 
 #class containing linguistic rules
 class ruleset(object):	
@@ -21,27 +22,32 @@ class ruleset(object):
 		
 	#long by position
 	def rule3(self, text, position):
-		next = text[position]
-		if re.match(r'^(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', next):
+		following = text[position]
+		if re.match(r'^(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', following):
 			return True
 		
 	#long by position
 	def rule4(self, text, position):
-		next = text[position]
-		if re.match(r'^([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', next):
+		following = text[position]
+		if re.match(r'^([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', following):
 			return True
 		
 	#muta cum liquida
 	def muta(self, text, position):
-		next = text[position]
-		if re.match(r'^[βγδπτκφχθ][λρνμ]', next):
+		following = text[position]
+		if re.match(r'^[βγδπτκφχθ][λρνμ]', following):
 			return True
 		
 	#hiat
 	def hiat(self, text, position):
 		current = text[position-1]
-		next = text[position]
-		if re.search(r'[αιουεωη]{1,*}$', current) and re.match(r'^[αιουεωη]{1,*}', next):
+		following = text[position]
+		#TODO: check match conditions
+		if re.search(r'[αιουεωη]{1,*}$', current):
+			print("current")
+		if re.match(r'^[αιουεωη]{1,*}', following):
+			print("following")
+		if re.search(r'[αιουεωη]{1,*}$', current) and re.match(r'^[αιουεωη]{1,*}', following):
 			return True
 
 	#circumflex
@@ -77,6 +83,7 @@ class annotator(object):
 		self.third_found = False
 		self.fourth_found = False
 		self.transducer = transducer.transducer()
+		self.success = True
 			
 	def _reset_positions(self):		
 		self.positions = []
@@ -86,6 +93,7 @@ class annotator(object):
 		self.second_found = False
 		self.third_found = False
 		self.fourth_found = False
+		self.success = True
 		
 	def set_text(self, verse, syllables):
 		self.verse.verse = verse
@@ -112,6 +120,9 @@ class annotator(object):
 
 	def _found_fourth(self):
 		return self.fourth_found
+
+	def _is_successful(self):
+		return self.success
 			
 	def _make_spondeus(self, limit):
 		self.verse.scansion = '-'
@@ -122,10 +133,21 @@ class annotator(object):
 				self.verse.scansion+='?'
 		self.verse.scansion+='-X'
 
+	def _verify_output(self):
+		self.success = self._verify_string(self.verse.verse)
+		self.verified()
+
+	def _verify_string(self, string):
+		s_units = list(filter(lambda s: re.match(r'[-\?\*]', s), string))
+		for x in range(1, len(s_units)-2):
+			if self._search_long(x+1) and s_units[x] == '*':
+				return False
+		return True
+
 	#function used to search the whole verse for long syllables (in fallback)
 	def _search_whole(self):
 		s_units = list(self.verse.scansion)
-		for x in range(0, len(s_units)-1): #no need to scan last two syllabs
+		for x in range(1, len(s_units)-2): #no need to scan last two syllabs
 			if s_units[x] == '?':
 				search_result = self._search_long(x+1)
 				if search_result:
@@ -137,13 +159,69 @@ class annotator(object):
 		self.verse.scansion = re.sub(r'-\?-X', '---X', self.verse.scansion)
 		#apply finite-state transducer
 		results = self.transducer.apply(self.verse.scansion).extract_paths(output='dict')
-		#we currently just select the solution that maximizes the weight
-		weight = 0
+		#lets output all solutions
+		#TODO: develop selection function
 		for input, outputs in results.items():
 			for output in outputs:
-				if output[1] > weight:
-					weight = output[1]
-					self.verse.scansion = output[0]
+				if not self._verify_string(output[0]):
+					continue
+				self.verse.scansion = self.verse.scansion + '###' + output[0]
+		#we currently just select the solution that maximizes the weight
+		#weight = 0
+		#for input, outputs in results.items():
+		#	for output in outputs:
+		#		if output[1] > weight:
+		#			weight = output[1]
+		#			self.verse.scansion = output[0]
+		self.check()
+
+	def _correct(self):
+		self._correct_string()
+		self.corrected()
+
+	def _correct_string(self):
+		print(self.verse.verse)
+		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
+		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
+		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
+		letters = list(filter(lambda s: re.match(r'[^ ]', s), self.verse.verse))
+		print(self.verse.scansion)
+		self.verse.scansion = ''
+		#TODO: treatment of first and last syllables, length
+		for x in range(0, len(letters)-2):
+			if letters[x] in vowels:
+				if letters[x] == 'z' and letters[x-1] != 'ω' and letters[x-1] != 'η':
+					self.verse.scansion += '-'
+					print(letters[x] + ' long by nature')
+					continue
+				elif letters[x] == 'η' or letters[x] == 'ω' and letters[x+1] not in vowels:
+					self.verse.scansion += '-'
+					print(letters[x] + ' long by nature')
+					continue
+				elif x > 1 and (letters[x-1] + letters[x] in diphtongs) and letters[x+1] not in vowels:
+					(head, sep, tail) = self.verse.scansion.rpartition('?')
+					self.verse.scansion = head + '-'
+					print(letters[x] + ' diphtong')
+					continue
+				elif letters[x+1] in consonants and letters[x+2] in consonants and not re.match(r'[βγδπτκφχθ][λρνμ]', letters[x+1] + letters[x+2]):
+					self.verse.scansion += '-'
+					print(letters[x] + ' long by position')
+					continue
+				elif letters[x+1] in ['ξ', 'ζ', 'ψ']:
+					self.verse.scansion += '-'
+					print(letters[x] + ' long by position')
+					continue
+				elif x > 1 and letters[x-2] in consonants and letters[x-1] + letters[x] in diphtongs:
+					(head, sep, tail) = self.verse.scansion.rpartition('?')
+					self.verse.scansion = head + '-'
+					print(letters[x] + ' starts with diphtong')
+					continue
+				else:
+					print(letters[x])
+					self.verse.scansion += '?'
+		#print(self.verse.verse)
+		#print(self.verse.syllables)
+		print(self.verse.scansion)			
 
 	def _search_long(self, position):
 		if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
@@ -165,7 +243,10 @@ class HFSA13(annotator):
 		{'name': 'searching_for_fourth_spondeus', 'children': ['thirdF', 'fifthF']},
 		{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
 		{'name': 'found_four_spondees', 'on_enter': '_make_scansion'},
-		{'name': 'fallback', 'on_enter': '_search_whole'}
+		{'name': 'fallback', 'on_enter': '_search_whole'},
+		{'name': 'correction', 'on_enter': '_correct'},
+		'success',
+		'failure'
 	]
 
 	def __init__(self, name):
@@ -190,6 +271,12 @@ class HFSA13(annotator):
 		self.machine.add_transition('search_spondeus', 'searching_for_fourth_spondeus_thirdF', 'found_four_spondees', conditions=[self._found_fourth])
 		self.machine.add_transition('search_spondeus', 'found_four_spondees', 'no_spondeus_found')
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
+		self.machine.add_transition('check', 'fallback', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('check', 'fallback', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_two_spondees', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_two_spondees', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('corrected', 'correction', 'failure', unless=[self._is_successful])
 
 	def _search_second(self):
 		third = self._search_long(3)
@@ -284,18 +371,23 @@ class HFSA13(annotator):
 		#nr. 40
 		if 10 in self.questions and 11 in self.questions:
 			self.verse.scansion = '-- -- -- -- -** -X'
+			self._verify_output()
 		#nr. 41
 		elif 8 in self.questions and 9 in self.questions:
 			self.verse.scansion = '-- -- -- -** -- -X'
+			self._verify_output()
 		#nr. 42
 		elif 6 in self.questions and 7 in self.questions:
 			self.verse.scansion = '-- -- -** -- -- -X'
+			self._verify_output()
 		#nr. 43
 		elif 4 in self.questions and 5 in self.questions:
 			self.verse.scansion = '-- -** -- -- -- -X'
+			self._verify_output()
 		#nr. 44
 		elif 2 in self.questions and 3 in self.questions:
 			self.verse.scansion = '-** -- -- -- -- -X'
+			self._verify_output()
 		else:
 			self.search_spondeus()
 
@@ -312,7 +404,10 @@ class HFSA14(annotator):
 		{'name': 'searching_for_third_spondeus', 'children': ['fourthF', 'thirdF', 'fifthF']},
 		{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
 		{'name': 'found_three_spondees', 'on_enter': '_make_scansion'},
-		{'name': 'fallback', 'on_enter': '_search_whole'}
+		{'name': 'fallback', 'on_enter': '_search_whole'},
+		{'name': 'correction', 'on_enter': '_correct'},
+		'success',
+		'failure'
 	]
 
 	def __init__ (self, name):
@@ -340,6 +435,12 @@ class HFSA14(annotator):
 		self.machine.add_transition('search_spondeus', 'searching_for_third_spondeus_thirdF', 'found_three_spondees', conditions=[self._found_third])
 		self.machine.add_transition('search_spondeus', 'found_three_spondees', 'no_spondeus_found')
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
+		self.machine.add_transition('check', 'fallback', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('check', 'fallback', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_two_spondees', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_two_spondees', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('corrected', 'correction', 'failure', unless=[self._is_successful])
 
 	def _search_second(self):
 		third = self._search_long(3)
@@ -434,33 +535,43 @@ class HFSA14(annotator):
 		#nr. 30
 		if 8 in self.questions and 9 in self.questions and 11 in self.questions and 12 in self.questions:
 			self.verse.scansion = '-- -- -- -** -** -X'
+			self._verify_output()
 		#nr. 31
 		elif 6 in self.questions and 7 in self.questions and 11 in self.questions and 12 in self.questions:
 			self.verse.scansion = '-- -- -** -- -** -X'
+			self._verify_output()
 		#nr. 32
 		elif 6 in self.questions and 7 in self.questions and 9 in self.questions and 10 in self.questions:
 			self.verse.scansion = '-- -- -** -** -- -X'
+			self._verify_output()
 		#nr. 33
 		elif 2 in self.questions and 3 in self.questions and 11 in self.questions and 12 in self.questions:
 			self.verse.scansion = '-** -- -- -- -** -X'
+			self._verify_output()
 		#nr. 34
 		elif 2 in self.questions and 3 in self.questions and 9 in self.questions and 10 in self.questions:
 			self.verse.scansion = '-** -- -- -** -- -X'
+			self._verify_output()
 		#nr. 35
 		elif 2 in self.questions and 3 in self.questions and 7 in self.questions and 8 in self.questions:
 			self.verse.scansion = '-** -- -** -- -- -X'
+			self._verify_output()
 		#nr. 36
 		elif 2 in self.questions and 3 in self.questions and 5 in self.questions and 6 in self.questions:
 			self.verse.scansion = '-** -** -- -- -- -X'
+			self._verify_output()
 		#nr. 37
 		elif 4 in self.questions and 5 in self.questions and 11 in self.questions and 12 in self.questions:
 			self.verse.scansion = '-- -** -- -- -** -X'
+			self._verify_output()
 		#nr. 38
 		elif 4 in self.questions and 5 in self.questions and 9 in self.questions and 10 in self.questions:
 			self.verse.scansion = '-- -** -- -** -- -X'
+			self._verify_output()
 		#nr. 39
 		elif 4 in self.questions and 5 in self.questions and 7 in self.questions and 8 in self.questions:
 			self.verse.scansion = '-- -** -** -- -- -X'
+			self._verify_output()
 		else:
 			self.search_spondeus()
 
@@ -475,7 +586,10 @@ class HFSA15(annotator):
 	{'name': 'searching_for_second_spondeus', 'children': ['firstF', 'fourthF', 'thirdF', 'fifthF']},
 	{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
 	{'name': 'found_two_spondees', 'on_enter': '_make_scansion'}, 
-	{'name': 'fallback', 'on_enter': '_search_whole'}
+	{'name': 'fallback', 'on_enter': '_search_whole'},
+	{'name': 'correction', 'on_enter': '_correct'},
+	'success',
+	'failure'
 	]
 
 	def __init__ (self, name):
@@ -501,6 +615,12 @@ class HFSA15(annotator):
 		self.machine.add_transition('search_spondeus', 'found_two_spondees', 'no_spondeus_found')
 		self.machine.add_transition('search_spondeus', 'searching_for_second_spondeus_fifthF', 'no_spondeus_found', unless=[self._found_second])
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
+		self.machine.add_transition('check', 'fallback', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('check', 'fallback', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_two_spondees', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_two_spondees', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('corrected', 'correction', 'failure', unless=[self._is_successful])
 		
 	def _search_second(self):
 		third = self._search_long(3)
@@ -593,32 +713,42 @@ class HFSA15(annotator):
 			self.verse.scansion = '-- '
 			if 4 in self.positions:
 				self.verse.scansion+= '-- -** -** -** -X'
+				self._verify_output()
 			elif 7 in self.positions:
 				self.verse.scansion+= '-** -- -** -** -X'
+				self._verify_output()
 			elif 10 in self.positions:
 				self.verse.scansion+= '-** -** -- -** -X'
+				self._verify_output()
 			elif 13 in self.positions:
 				self.verse.scansion+= '-** -** -** -- -X'
+				self._verify_output()
 			else:
 				self.search_spondeus()
 		elif 5 in self.positions:
 			self.verse.scansion = '-** -- '
 			if 7 in self.positions:
 				self.verse.scansion+= '-- -** -** -X'
+				self._verify_output()
 			elif 10 in self.positions:
 				self.verse.scansion+= '-** -- -** -X'
+				self._verify_output()
 			elif 13 in self.positions:
 				self.verse.scansion+= '-** -** -- -X'
+				self._verify_output()
 			else:
 				self.search_spondeus()
 		elif 8 in self.positions:
 			self.verse.scansion = '-** -** -- '
 			if 10 in self.positions:
 				self.verse.scansion+= '-- -** -X'
+				self._verify_output()
 			elif 13 in self.positions:
 				self.verse.scansion+= '-** -- -X'
+				self._verify_output()
 		elif 11 in self.positions:
 			self.verse.scansion = '-** -** -** -- -- -X'
+			self._verify_output()
 		else:
 			self.search_spondeus()
 			
@@ -630,9 +760,12 @@ class HFSA16(annotator):
 	_states = [
 	{'name': 'waiting', 'on_enter': '_reset_positions'},
 	{'name': 'searching_for_spondeus', 'children': ['secondF', 'firstF', 'fourthF', 'thirdF', 'fifthF']},
-	{'name': 'spondeus_found'},
+	{'name': 'spondeus_found', 'on_enter': '_verify_output'},
 	{'name': 'no_spondeus_found', 'on_enter': '_make_spondeus'},
-	{'name': 'fallback', 'on_enter': '_search_whole'}
+	{'name': 'fallback', 'on_enter': '_search_whole'},
+	{'name': 'correction', 'on_enter': '_correct'},
+	'success',
+	'failure'
 	]
 	
 	def __init__(self, name):
@@ -650,6 +783,12 @@ class HFSA16(annotator):
 		self.machine.add_transition('found_spondeus', 'searching_for_spondeus_fifthF', 'spondeus_found')
 		self.machine.add_transition('not_found', 'searching_for_spondeus_fifthF', 'no_spondeus_found')
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
+		self.machine.add_transition('check', 'fallback', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('check', 'fallback', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'spondeus_found', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'spondeus_found', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('corrected', 'correction', 'failure', unless=[self._is_successful])
 	
 	def _search_second(self):
 		fourth = self._search_long(4)
@@ -687,7 +826,7 @@ class HFSA16(annotator):
 			self.not_found()
 		else:
 			self.not_found()
-			
+
 	def _search_third(self):
 		seventh = self._search_long(7)
 		eigth = self._search_long(8)

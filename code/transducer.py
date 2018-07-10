@@ -80,7 +80,7 @@ class transducer(object):
         self.transducer.add_transition(10, 11, '-', '-', 1)
         self.transducer.add_transition(11, 12, 'X', 'X', 1)
         #mark accepting state
-        self.transducer.set_final_weight(12, 12)
+        self.transducer.set_final_weight(12,12)
 
     def apply(self, line):
         tok = hfst.HfstTokenizer()
