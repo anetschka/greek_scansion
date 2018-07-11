@@ -2,7 +2,6 @@ import re
 import transducer
 from transitions.extensions import HierarchicalMachine as Machine
 from transitions.extensions.states import add_state_features, Tags
-from preprocessing import preprocessor
 
 #class containing linguistic rules
 class ruleset(object):	
@@ -28,26 +27,24 @@ class ruleset(object):
 		
 	#long by position
 	def rule4(self, text, position):
+		current = text[position-1]
 		following = text[position]
-		if re.match(r'^([ςβγδθκλμνπρστφχξζψ]{2,*}|[ξζψ])', following):
+		if re.search(r'([αιουεωη][ςβγδθκλμνπρστφχξζψ]{2,}|[αιουεωη][ξζψ])', current+following):
 			return True
 		
 	#muta cum liquida
 	def muta(self, text, position):
+		current = text[position-1]
 		following = text[position]
-		if re.match(r'^[βγδπτκφχθ][λρνμ]', following):
+		if re.search(r'[αιουεωη][βγδπτκφχθ][λρνμ]', current+following):
 			return True
 		
 	#hiat
 	def hiat(self, text, position):
 		current = text[position-1]
 		following = text[position]
-		#TODO: check match conditions
-		if re.search(r'[αιουεωη]{1,*}$', current):
-			print("current")
-		if re.match(r'^[αιουεωη]{1,*}', following):
-			print("following")
-		if re.search(r'[αιουεωη]{1,*}$', current) and re.match(r'^[αιουεωη]{1,*}', following):
+		if re.search(r'[αιουεωη]{2,*}', current+following):
+		#if re.search(r'[αιουεωη]{1,*}$', current) and re.match(r'^[αιουεωη]{1,*}', following):
 			return True
 
 	#circumflex
@@ -134,13 +131,21 @@ class annotator(object):
 		self.verse.scansion+='-X'
 
 	def _verify_output(self):
-		self.success = self._verify_string(self.verse.verse)
+		#TODO: turn into proper code
+		#for now we verify only the first scansion variant given by the transducer
+		versions = re.split(r'###', self.verse.scansion)
+		if(len(versions) > 1):
+			self.success = self._verify_string(versions[1])
+		else:
+			self.success = self._verify_string(versions[0])
 		self.verified()
 
 	def _verify_string(self, string):
 		s_units = list(filter(lambda s: re.match(r'[-\?\*]', s), string))
-		for x in range(1, len(s_units)-2):
+		for x in range(0, len(s_units)-2):
 			if self._search_long(x+1) and s_units[x] == '*':
+				return False
+			elif s_units[x] == '?':
 				return False
 		return True
 
@@ -159,10 +164,10 @@ class annotator(object):
 		self.verse.scansion = re.sub(r'-\?-X', '---X', self.verse.scansion)
 		#apply finite-state transducer
 		results = self.transducer.apply(self.verse.scansion).extract_paths(output='dict')
-		#lets output all solutions
+		#lets output all valid solutions
 		#TODO: develop selection function
 		for input, outputs in results.items():
-			for output in outputs:
+			for output in outputs:	
 				if not self._verify_string(output[0]):
 					continue
 				self.verse.scansion = self.verse.scansion + '###' + output[0]
@@ -173,55 +178,63 @@ class annotator(object):
 		#		if output[1] > weight:
 		#			weight = output[1]
 		#			self.verse.scansion = output[0]
-		self.check()
+		self._verify_output()
 
 	def _correct(self):
 		self._correct_string()
+		#TODO: This transition does not work right now
+		#TODO: FST needs to produce output string
+		#TODO: make functioning state transition call
+		#remember to set self.success
 		self.corrected()
 
+	#this function assigns length vowel by vowel, but only if all other processing before has failed
 	def _correct_string(self):
-		print(self.verse.verse)
 		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
-		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
+		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω', 'z']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		letters = list(filter(lambda s: re.match(r'[^ ]', s), self.verse.verse))
-		print(self.verse.scansion)
-		self.verse.scansion = ''
-		#TODO: treatment of first and last syllables, length
+		self.verse.scansion += '###corrected###'
 		for x in range(0, len(letters)-2):
 			if letters[x] in vowels:
 				if letters[x] == 'z' and letters[x-1] != 'ω' and letters[x-1] != 'η':
-					self.verse.scansion += '-'
-					print(letters[x] + ' long by nature')
+					(head, sep, tail) = self.verse.scansion.rpartition('?')
+					if x > 1 and (letters[x-2] + letters[x-1] in diphtongs):
+						(head2, sep, tail) = head.rpartition('?')
+						self.verse.scansion = head2 + '-'
+					else:
+						self.verse.scansion = head + '-'
 					continue
-				elif letters[x] == 'η' or letters[x] == 'ω' and letters[x+1] not in vowels:
+				elif (letters[x] == 'η' or letters[x] == 'ω') and letters[x+1] not in vowels:
 					self.verse.scansion += '-'
-					print(letters[x] + ' long by nature')
 					continue
-				elif x > 1 and (letters[x-1] + letters[x] in diphtongs) and letters[x+1] not in vowels:
+				elif (letters[x-1] == 'η' or letters[x-1] == 'ω') and letters[x] == 'z':
 					(head, sep, tail) = self.verse.scansion.rpartition('?')
 					self.verse.scansion = head + '-'
-					print(letters[x] + ' diphtong')
+					continue
+				elif x > 1 and (letters[x-1] + letters[x] in diphtongs) and (letters[x-1] + letters[x] != 'οι') and (letters[x-1] + letters[x] != 'αι') and letters[x+1] not in vowels:
+					(head, sep, tail) = self.verse.scansion.rpartition('?')
+					self.verse.scansion = head + '-'
+					continue
+				elif (letters[x+1] + letters[x+2] in diphtongs):
+					if letters[x-1] in vowels:
+						(head, sep, tail) = self.verse.scansion.rpartition('?')
+						self.verse.scansion = head + '-'
+					else:
+						self.verse.scansion += '-'
 					continue
 				elif letters[x+1] in consonants and letters[x+2] in consonants and not re.match(r'[βγδπτκφχθ][λρνμ]', letters[x+1] + letters[x+2]):
 					self.verse.scansion += '-'
-					print(letters[x] + ' long by position')
 					continue
 				elif letters[x+1] in ['ξ', 'ζ', 'ψ']:
 					self.verse.scansion += '-'
-					print(letters[x] + ' long by position')
 					continue
-				elif x > 1 and letters[x-2] in consonants and letters[x-1] + letters[x] in diphtongs:
+				elif x > 1 and letters[x-2] in consonants and (letters[x-1] + letters[x] in diphtongs) and (letters[x-1] + letters[x] != 'οι') and (letters[x-1] + letters[x] != 'αι'):
 					(head, sep, tail) = self.verse.scansion.rpartition('?')
 					self.verse.scansion = head + '-'
-					print(letters[x] + ' starts with diphtong')
 					continue
 				else:
-					print(letters[x])
 					self.verse.scansion += '?'
-		#print(self.verse.verse)
-		#print(self.verse.syllables)
-		print(self.verse.scansion)			
 
 	def _search_long(self, position):
 		if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
@@ -271,8 +284,8 @@ class HFSA13(annotator):
 		self.machine.add_transition('search_spondeus', 'searching_for_fourth_spondeus_thirdF', 'found_four_spondees', conditions=[self._found_fourth])
 		self.machine.add_transition('search_spondeus', 'found_four_spondees', 'no_spondeus_found')
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
-		self.machine.add_transition('check', 'fallback', 'correction', unless=[self._is_successful])
-		self.machine.add_transition('check', 'fallback', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'fallback', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('verified', 'fallback', 'success', conditions=[self._is_successful])
 		self.machine.add_transition('verified', 'found_two_spondees', 'success', conditions=[self._is_successful])
 		self.machine.add_transition('verified', 'found_two_spondees', 'correction', unless=[self._is_successful])
 		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])
@@ -323,12 +336,13 @@ class HFSA13(annotator):
 			self.positions.append(8)
 			self.positions.append(9)
 			self._set_found()
-		elif seventh:
-			self.positions.append(7)
-		elif eigth:
-			self.positions.append(8)
-		elif ninth:
-			self.positions.append(9)
+		else:
+			if seventh:
+				self.positions.append(7)
+			if eigth:
+				self.positions.append(8)
+			if ninth:
+				self.positions.append(9)
 		self.search_spondeus()
 
 	def _search_third(self):
@@ -343,12 +357,13 @@ class HFSA13(annotator):
 			self.positions.append(6)
 			self.positions.append(7)
 			self._set_found()
-		elif sixth:
-			self.positions.append(6)
-		elif seventh:
-			self.positions.append(7)
-		elif fifth:
-			self.positions.append(5)
+		else:
+			if sixth:
+				self.positions.append(6)
+			if seventh:
+				self.positions.append(7)
+			if fifth:
+				self.positions.append(5)
 		self.search_spondeus()
 
 	def _search_fifth(self):
@@ -390,7 +405,6 @@ class HFSA13(annotator):
 			self._verify_output()
 		else:
 			self.search_spondeus()
-
 
 	def _make_spondeus(self):
 		annotator._make_spondeus(self, 11)
@@ -435,10 +449,10 @@ class HFSA14(annotator):
 		self.machine.add_transition('search_spondeus', 'searching_for_third_spondeus_thirdF', 'found_three_spondees', conditions=[self._found_third])
 		self.machine.add_transition('search_spondeus', 'found_three_spondees', 'no_spondeus_found')
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
-		self.machine.add_transition('check', 'fallback', 'correction', unless=[self._is_successful])
-		self.machine.add_transition('check', 'fallback', 'success', conditions=[self._is_successful])
-		self.machine.add_transition('verified', 'found_two_spondees', 'success', conditions=[self._is_successful])
-		self.machine.add_transition('verified', 'found_two_spondees', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('verified', 'fallback', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('verified', 'fallback', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_three_spondees', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_three_spondees', 'correction', unless=[self._is_successful])
 		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])
 		self.machine.add_transition('corrected', 'correction', 'failure', unless=[self._is_successful])
 
@@ -454,12 +468,13 @@ class HFSA14(annotator):
 			self.positions.append(4)
 			self.positions.append(5)
 			self._set_found()
-		elif third:
-			self.positions.append(3)
-		elif fourth:
-			self.positions.append(4)
-		elif fifth:
-			self.positions.append(5)
+		else:
+			if third:
+				self.positions.append(3)
+			if fourth:
+				self.positions.append(4)
+			if fifth:
+				self.positions.append(5)
 		self.search_spondeus()
 
 	def _search_first(self):
@@ -487,12 +502,13 @@ class HFSA14(annotator):
 			self.positions.append(9)
 			self.positions.append(10)
 			self._set_found()
-		elif eigth:
-			self.positions.append(8)
-		elif ninth:
-			self.positions.append(9)
-		elif tenth:
-			self.positions.append(10)
+		else:
+			if eigth:
+				self.positions.append(8)
+			if ninth:
+				self.positions.append(9)
+			if tenth:
+				self.positions.append(10)
 		self.search_spondeus()
 		
 	def _search_third(self):
@@ -507,12 +523,13 @@ class HFSA14(annotator):
 			self.positions.append(6)
 			self.positions.append(7)
 			self._set_found()
-		elif sixth:
-			self.positions.append(6)
-		elif seventh:
-			self.positions.append(7)
-		elif eigth:
-			self.positions.append(8)
+		else:
+			if sixth:
+				self.positions.append(6)
+			if seventh:
+				self.positions.append(7)
+			if eigth:
+				self.positions.append(8)
 		self.search_spondeus()
 		
 	def _search_fifth(self):
@@ -615,8 +632,8 @@ class HFSA15(annotator):
 		self.machine.add_transition('search_spondeus', 'found_two_spondees', 'no_spondeus_found')
 		self.machine.add_transition('search_spondeus', 'searching_for_second_spondeus_fifthF', 'no_spondeus_found', unless=[self._found_second])
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
-		self.machine.add_transition('check', 'fallback', 'correction', unless=[self._is_successful])
-		self.machine.add_transition('check', 'fallback', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'fallback', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('verified', 'fallback', 'success', conditions=[self._is_successful])
 		self.machine.add_transition('verified', 'found_two_spondees', 'success', conditions=[self._is_successful])
 		self.machine.add_transition('verified', 'found_two_spondees', 'correction', unless=[self._is_successful])
 		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])
@@ -634,12 +651,13 @@ class HFSA15(annotator):
 			self.positions.append(4)
 			self.positions.append(5)
 			self._set_found()
-		elif third:
-			self.positions.append(3)
-		elif fourth:
-			self.positions.append(4)
-		elif fifth:
-			self.positions.append(5)
+		else:
+			if third:
+				self.positions.append(3)
+			if fourth:
+				self.positions.append(4)
+			if fifth:
+				self.positions.append(5)
 		self.search_spondeus()
 		
 	def _search_first(self):
@@ -667,12 +685,13 @@ class HFSA15(annotator):
 			self.positions.append(9)
 			self.positions.append(10)
 			self._set_found()
-		elif ninth:
-			self.positions.append(9)
-		elif tenth:
-			self.positions.append(10)
-		elif eleventh:
-			self.positions.append(11)
+		else:
+			if ninth:
+				self.positions.append(9)
+			if tenth:
+				self.positions.append(10)
+			if eleventh:
+				self.positions.append(11)
 		self.search_spondeus()
 		
 	def _search_third(self):
@@ -687,12 +706,13 @@ class HFSA15(annotator):
 			self.positions.append(6)
 			self.positions.append(7)
 			self._set_found()
-		elif sixth:
-			self.positions.append(6)
-		elif seventh:
-			self.positions.append(7)
-		elif eigth:
-			self.positions.append(8)
+		else:
+			if sixth:
+				self.positions.append(6)
+			if seventh:
+				self.positions.append(7)
+			if eigth:
+				self.positions.append(8)
 		self.search_spondeus()
 		
 	def _search_fifth(self):
@@ -783,8 +803,8 @@ class HFSA16(annotator):
 		self.machine.add_transition('found_spondeus', 'searching_for_spondeus_fifthF', 'spondeus_found')
 		self.machine.add_transition('not_found', 'searching_for_spondeus_fifthF', 'no_spondeus_found')
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
-		self.machine.add_transition('check', 'fallback', 'correction', unless=[self._is_successful])
-		self.machine.add_transition('check', 'fallback', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'fallback', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('verified', 'fallback', 'success', conditions=[self._is_successful])
 		self.machine.add_transition('verified', 'spondeus_found', 'success', conditions=[self._is_successful])
 		self.machine.add_transition('verified', 'spondeus_found', 'correction', unless=[self._is_successful])
 		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])

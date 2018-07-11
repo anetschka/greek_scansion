@@ -28,11 +28,6 @@ hfsa15 = HFSA15('hfsa15')
 hfsa16 = HFSA16('hfsa16')
 annotator = annotator('annotator')
 
-#only for tracking number of lines with obviously erroneous syllabification
-syll_counter = 0
-#track number of sentences with scansion annotation
-scansion_counter = 0
-
 for line in lines:
 #for line in selection:
 	scansion = ''
@@ -51,29 +46,31 @@ for line in lines:
 	syllables = re.split(r'[ \.]', syllabified)
 
 	if syllable_count < 12 or syllable_count > 17:
-		print("WARNING: Incorrect syllable count: " + vals[0])
-		syll_counter += 1
-		#TODO: if there are more than four words, proceed to detailed analysis
+		#we analyse nonetheless, provided that there are not too few syllables
+		if syllable_count > 8:
+			annotator.set_text(text, syllables)
+			annotator._correct_string()
+		else:
+			print("WARNING: Incorrect syllable count: " + vals[0])
 
 	#scansion annotation
 	elif syllable_count == 12:
 		scansion = '-- -- -- -- -- -X'
-		#check correctness using generic annotator instance
 		#TODO: implement own dea for these cases
+		annotator._reset_positions()
 		annotator.set_text(text, syllables)
-		if annotator._verify_string(scansion):
-			scansion_counter += 1
-		else:
+		if not annotator._verify_string(scansion):
 			#correct
-			result = annotator._correct_string()
+			annotator._correct_string()
+			scansion = annotator.verse.scansion
 
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
+		annotator._reset_positions()
 		annotator.set_text(text, syllables)
-		if annotator._verify_string(scansion):
-			scansion_counter += 1
-		else:
-			result = annotator._correct_string()
+		if not annotator._verify_string(scansion):
+			annotator._correct_string()
+			scansion = annotator.verse.scansion
 		
 	elif syllable_count == 13:
 		if hfsa13.state != 'waiting':
@@ -82,17 +79,11 @@ for line in lines:
 		hfsa13.start_analysis()
 		if hfsa13.state == 'success':
 			scansion = hfsa13.verse.scansion
-			scansion_counter += 1
 		elif hfsa13.state == 'no_spondeus_found':
 			hfsa13.not_found()
 			#TODO: rather try to check whether fst has accepted the input string
 			if re.match(r'#', hfsa13.verse.scansion):
-				scansion_counter += 1
 				scansion = hfsa13.scansion
-			else:
-				scansion = 'NOT RESOLVED'
-		else:
-			scansion = 'NOT RESOLVED'
 		
 	elif syllable_count == 14:
 		if hfsa14.state != 'waiting':
@@ -101,16 +92,10 @@ for line in lines:
 		hfsa14.start_analysis()
 		if hfsa14.state == 'success':
 			scansion = hfsa14.verse.scansion
-			scansion_counter += 1
 		elif hfsa14.state == 'no_spondeus_found':
 			hfsa14.not_found()
 			if re.search(r'#', hfsa14.verse.scansion):
-				scansion_counter += 1
-				scansion = hfsa14.verse.scansion		
-			else:
-				scansion = 'NOT RESOLVED'
-		else:
-			scansion = 'NOT RESOLVED'
+				scansion = hfsa14.verse.scansion
 				
 	elif syllable_count == 15:
 		if hfsa15.state != 'waiting':
@@ -119,16 +104,10 @@ for line in lines:
 		hfsa15.start_analysis()
 		if(hfsa15.state == 'success'):
 			scansion = hfsa15.verse.scansion
-			scansion_counter += 1
 		elif hfsa15.state == 'no_spondeus_found':
 			hfsa15.not_found()		
 			if re.search(r'#', hfsa15.verse.scansion):
-				scansion_counter += 1
 				scansion = hfsa15.verse.scansion
-			else:
-				scansion = 'NOT RESOLVED'
-		else:
-			scansion = 'NOT RESOLVED'
 		
 	elif syllable_count == 16:
 		if hfsa16.state != 'waiting':
@@ -137,22 +116,14 @@ for line in lines:
 		hfsa16.start_analysis()
 		if hfsa16.state == 'success':
 			scansion = hfsa16.verse.scansion
-			scansion_counter += 1
 		elif hfsa16.state == 'no_spondeus_found':
 			hfsa16.not_found()
 			if re.search(r'#', hfsa16.verse.scansion):
-				scansion_counter += 1
 				scansion = hfsa16.verse.scansion
-			else:
-				scansion = 'NOT RESOLVED'
-		else:
-			scansion = 'NOT RESOLVED'
 	
 	#output
+	if len(scansion) == 0:
+		scansion = 'NOT RESOLVED'
 	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
-	
-#log	
-print(syll_counter, ' incorrectly syllabified verses')
-print(scansion_counter, 'annotated verses')
 
 outfile.close()

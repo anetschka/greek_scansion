@@ -148,6 +148,8 @@ class preprocessor(object):
 		text = re.sub(r'Ὠ', 'Ω', text)
 	
 		text = re.sub(r'ῥ', 'ρ', text)
+
+		text = re.sub(r'zͅ', 'z', text)
 	
 		#remove quotes as they can lead to incorrect syllabification
 		text = re.sub(r'"', '', text)
