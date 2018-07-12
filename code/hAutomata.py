@@ -1,5 +1,5 @@
 import re
-import transducer
+from transducer import fallbackTransducer, vowelTransducer
 from transitions.extensions import HierarchicalMachine as Machine
 from transitions.extensions.states import add_state_features, Tags
 
@@ -60,11 +60,13 @@ class verse(object):
 		self.verse = ''
 		self.syllables = ''
 		self.scansion = ''
+		self.correction = ''
 
 	def clear(self):
 		self.verse = ''
 		self.syllables = ''
 		self.scansion = ''
+		self.correction = ''
 
 #superclass encapsulating basic functionality
 class annotator(object):
@@ -79,7 +81,8 @@ class annotator(object):
 		self.second_found = False
 		self.third_found = False
 		self.fourth_found = False
-		self.transducer = transducer.transducer()
+		self.fallbackTransducer = fallbackTransducer()
+		self.vowelTransducer = vowelTransducer()
 		self.success = True
 			
 	def _reset_positions(self):		
@@ -130,6 +133,7 @@ class annotator(object):
 				self.verse.scansion+='?'
 		self.verse.scansion+='-X'
 
+	#function used to verify correctness of produced hexameter annotation
 	def _verify_output(self):
 		self.success = self._verify_string(self.verse.scansion)
 		self.verified()
@@ -157,7 +161,7 @@ class annotator(object):
 		self.verse.scansion = re.sub(r'-\?\?-X', '-**-X', self.verse.scansion)
 		self.verse.scansion = re.sub(r'-\?-X', '---X', self.verse.scansion)
 		#apply finite-state transducer
-		results = self.transducer.apply(self.verse.scansion).extract_paths(output='dict')
+		results = self.fallbackTransducer.apply(self.verse.scansion).extract_paths(output='dict')
 		#failure if transducer does not accept input string
 		if len(results.items()) == 0:
 			self.success = False
@@ -166,9 +170,8 @@ class annotator(object):
 		#TODO: develop selection function
 			for input, outputs in results.items():
 				for output in outputs:	
-					if not self._verify_string(output[0]):
-						continue
-					self.verse.scansion = self.verse.scansion + '###' + output[0]
+					if self._verify_string(output[0]):
+						self.verse.correction = self.verse.correction + '###' + output[0]
 		#we currently just select the solution that maximizes the weight
 		#weight = 0
 		#for input, outputs in results.items():
@@ -179,48 +182,56 @@ class annotator(object):
 		#self._verify_output()
 		self.verified()
 
+	#function used to correct faulty hexameter scheme: fallback to vowel-wise analysis
 	def _correct(self):
 		self._correct_string()
-		#TODO: FST needs to produce output string
-		#remember to set self.success
+		self.verse.correction = re.sub(r'-\?-', '---', self.verse.correction)
+		results = self.vowelTransducer.apply(self.verse.correction).extract_paths(output='dict')
+		if len(results.items()) == 0:
+			self.success = False
+		else:		
+		#TODO: develop selection function
+		#or output arg max solution
+			for input, outputs in results.items():
+				for output in outputs:
+					if self._verify_string(output[0]):	
+						self.verse.correction = self.verse.correction + '###corrected###' + output[0]
 		self.corrected()
 
 	#this function assigns length vowel by vowel if all other processing before has failed
+	#TODO: either here or in voweltransducer - try to merge superfluous syllables
 	def _correct_string(self):
 		diphtongs = ['υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
 		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		letters = list(filter(lambda s: re.match(r'[^ ]', s), self.verse.verse))
-		self.verse.scansion += '###corrected###'
-		correctedScansion = ''
 		for x in range(0, len(letters)):
 			if letters[x] in vowels:
 				if x < len(letters)-1 and letters[x+1] == 'z':
-					correctedScansion += '-'
+					self.verse.correction += '-'
 					continue
 				elif x < len(letters)-2 and (letters[x+1] + letters[x+2] in diphtongs or letters[x+1] + letters[x+2] in ['αι', 'οι']):
-					correctedScansion += '-'
+					self.verse.correction += '-'
 					continue
 				elif (letters[x] == 'ω' or letters[x] == 'η') :
 					if x < len(letters)-1 and letters[x+1] in vowels:
-						correctedScansion += '?'
+						self.verse.correction += '?'
 					elif x < len(letters)-1 and letters[x+1] not in vowels:
-						correctedScansion += '-'
+						self.verse.correction += '-'
 					else:
-						correctedScansion += '-'
+						self.verse.correction += '-'
 					continue
 				elif x > 0 and (letters[x-1] + letters[x] in diphtongs):
-					correctedScansion += '-'
+					self.verse.correction += '-'
 					continue
 				elif x < len(letters)-2 and letters[x+1] in consonants and letters[x+2] in consonants and not re.match(r'[βγδπτκφχθ][λρνμ]', letters[x+1] + letters[x+2]):
-					correctedScansion += '-'
+					self.verse.correction += '-'
 					continue
 				elif x < len(letters)-1 and letters[x+1] in ['ξ', 'ζ', 'ψ']:
-					correctedScansion += '-'
+					self.verse.correction += '-'
 					continue
 				elif x < len(letters)-1 and (letters[x] + letters[x+1] not in diphtongs and letters[x] + letters[x+1] not in ['αι', 'οι']):
-					correctedScansion += '?'
-		self.verse.scansion += correctedScansion
+					self.verse.correction += '?'
 
 	def _search_long(self, position):
 		if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
@@ -752,6 +763,8 @@ class HFSA15(annotator):
 			elif 13 in self.positions:
 				self.verse.scansion+= '-** -- -X'
 				self._verify_output()
+			else:
+				self.search_spondeus()
 		elif 11 in self.positions:
 			self.verse.scansion = '-** -** -** -- -- -X'
 			self._verify_output()
