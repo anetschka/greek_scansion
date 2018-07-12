@@ -189,52 +189,69 @@ class annotator(object):
 		self.corrected()
 
 	#this function assigns length vowel by vowel, but only if all other processing before has failed
+	#TODO: consider transformation to dea
 	def _correct_string(self):
 		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
 		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω', 'z']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		letters = list(filter(lambda s: re.match(r'[^ ]', s), self.verse.verse))
 		self.verse.scansion += '###corrected###'
+		correctedScansion = ''
 		for x in range(0, len(letters)-2):
 			if letters[x] in vowels:
 				if letters[x] == 'z' and letters[x-1] != 'ω' and letters[x-1] != 'η':
-					(head, sep, tail) = self.verse.scansion.rpartition('?')
-					if x > 1 and (letters[x-2] + letters[x-1] in diphtongs):
-						(head2, sep, tail) = head.rpartition('?')
-						self.verse.scansion = head2 + '-'
+					if correctedScansion.endswith('?'):
+						(head, sep, tail) = correctedScansion.rpartition('?')
+						if x > 1 and (letters[x-2] + letters[x-1] in diphtongs) and head.endswith('?'):
+							(head2, sep, tail) = head.rpartition('?')
+							correctedScansion = head2 + '-'
+						else:
+							correctedScansion = head + '-'
+					elif correctedScansion.endswith('-'):
+						continue
 					else:
-						self.verse.scansion = head + '-'
+						correctedScansion += '-'
 					continue
 				elif (letters[x] == 'η' or letters[x] == 'ω') and letters[x+1] not in vowels:
-					self.verse.scansion += '-'
+					correctedScansion += '-'
 					continue
 				elif (letters[x-1] == 'η' or letters[x-1] == 'ω') and letters[x] == 'z':
-					(head, sep, tail) = self.verse.scansion.rpartition('?')
-					self.verse.scansion = head + '-'
+					if correctedScansion.endswith('?'):
+						(head, sep, tail) = correctedScansion.rpartition('?')
+						correctedScansion = head + '-'
+					else:
+						correctedScansion += '-'
 					continue
 				elif x > 1 and (letters[x-1] + letters[x] in diphtongs) and (letters[x-1] + letters[x] != 'οι') and (letters[x-1] + letters[x] != 'αι') and letters[x+1] not in vowels:
-					(head, sep, tail) = self.verse.scansion.rpartition('?')
-					self.verse.scansion = head + '-'
+					if correctedScansion.endswith('?'):
+						(head, sep, tail) = correctedScansion.rpartition('?')
+						correctedScansion = head + '-'
+					else:
+						correctedScansion += '-'
 					continue
 				elif (letters[x+1] + letters[x+2] in diphtongs):
-					if letters[x-1] in vowels:
-						(head, sep, tail) = self.verse.scansion.rpartition('?')
-						self.verse.scansion = head + '-'
+					if letters[x-1] in vowels and correctedScansion.endswith('?'):
+						(head, sep, tail) = correctedScansion.rpartition('?')
+						correctedScansion = head + '-'
 					else:
-						self.verse.scansion += '-'
+						correctedScansion += '-'
 					continue
 				elif letters[x+1] in consonants and letters[x+2] in consonants and not re.match(r'[βγδπτκφχθ][λρνμ]', letters[x+1] + letters[x+2]):
-					self.verse.scansion += '-'
+					correctedScansion += '-'
 					continue
 				elif letters[x+1] in ['ξ', 'ζ', 'ψ']:
-					self.verse.scansion += '-'
+					correctedScansion += '-'
 					continue
 				elif x > 1 and letters[x-2] in consonants and (letters[x-1] + letters[x] in diphtongs) and (letters[x-1] + letters[x] != 'οι') and (letters[x-1] + letters[x] != 'αι'):
-					(head, sep, tail) = self.verse.scansion.rpartition('?')
-					self.verse.scansion = head + '-'
+					if correctedScansion.endswith('?'):
+						(head, sep, tail) = correctedScansion.rpartition('?')
+						correctedScansion = head + '-'
+					else:
+						correctedScansion += '-'
 					continue
 				else:
-					self.verse.scansion += '?'
+					correctedScansion += '?'
+		self.verse.scansion += correctedScansion
 
 	def _search_long(self, position):
 		if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
@@ -879,3 +896,24 @@ class HFSA16(annotator):
 			
 	def _make_spondeus(self):
 		annotator._make_spondeus(self, 14)
+
+class SimpleFSA(annotator):
+	
+	_states = [
+	{'name': 'waiting', 'on_enter': '_reset_positions'},
+	{'name': 'analysing'},
+	{'name': 'finished'}
+	]
+
+	def __init__(self, name):
+		annotator.__init__(self, name)
+		self.machine = Machine(model=self, states=SimpleFSA._states, initial='waiting')
+		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='analysing', after='_analyse')
+		self.machine.add_transition('finished_analysis', 'analysing', 'finished')
+
+	def verify(self, line):
+		return annotator._verify_string(self, line)
+	
+	def _analyse(self):
+		annotator._correct_string(self)
+		self.finished_analysis()
