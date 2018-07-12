@@ -131,13 +131,7 @@ class annotator(object):
 		self.verse.scansion+='-X'
 
 	def _verify_output(self):
-		#TODO: turn into proper code
-		#for now we verify only the first scansion variant given by the transducer
-		versions = re.split(r'###', self.verse.scansion)
-		if(len(versions) > 1):
-			self.success = self._verify_string(versions[1])
-		else:
-			self.success = self._verify_string(versions[0])
+		self.success = self._verify_string(self.verse.scansion)
 		self.verified()
 
 	def _verify_string(self, string):
@@ -164,13 +158,17 @@ class annotator(object):
 		self.verse.scansion = re.sub(r'-\?-X', '---X', self.verse.scansion)
 		#apply finite-state transducer
 		results = self.transducer.apply(self.verse.scansion).extract_paths(output='dict')
+		#failure if transducer does not accept input string
+		if len(results.items()) == 0:
+			self.success = False
+		else:
 		#lets output all valid solutions
 		#TODO: develop selection function
-		for input, outputs in results.items():
-			for output in outputs:	
-				if not self._verify_string(output[0]):
-					continue
-				self.verse.scansion = self.verse.scansion + '###' + output[0]
+			for input, outputs in results.items():
+				for output in outputs:	
+					if not self._verify_string(output[0]):
+						continue
+					self.verse.scansion = self.verse.scansion + '###' + output[0]
 		#we currently just select the solution that maximizes the weight
 		#weight = 0
 		#for input, outputs in results.items():
@@ -178,78 +176,49 @@ class annotator(object):
 		#		if output[1] > weight:
 		#			weight = output[1]
 		#			self.verse.scansion = output[0]
-		self._verify_output()
+		#self._verify_output()
+		self.verified()
 
 	def _correct(self):
 		self._correct_string()
-		#TODO: This transition does not work right now
 		#TODO: FST needs to produce output string
-		#TODO: make functioning state transition call
 		#remember to set self.success
 		self.corrected()
 
-	#this function assigns length vowel by vowel, but only if all other processing before has failed
-	#TODO: consider transformation to dea
+	#this function assigns length vowel by vowel if all other processing before has failed
 	def _correct_string(self):
-		diphtongs = ['αι', 'οι', 'υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
-		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω', 'z']
+		diphtongs = ['υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
+		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		letters = list(filter(lambda s: re.match(r'[^ ]', s), self.verse.verse))
 		self.verse.scansion += '###corrected###'
 		correctedScansion = ''
-		for x in range(0, len(letters)-2):
+		for x in range(0, len(letters)):
 			if letters[x] in vowels:
-				if letters[x] == 'z' and letters[x-1] != 'ω' and letters[x-1] != 'η':
-					if correctedScansion.endswith('?'):
-						(head, sep, tail) = correctedScansion.rpartition('?')
-						if x > 1 and (letters[x-2] + letters[x-1] in diphtongs) and head.endswith('?'):
-							(head2, sep, tail) = head.rpartition('?')
-							correctedScansion = head2 + '-'
-						else:
-							correctedScansion = head + '-'
-					elif correctedScansion.endswith('-'):
-						continue
-					else:
-						correctedScansion += '-'
-					continue
-				elif (letters[x] == 'η' or letters[x] == 'ω') and letters[x+1] not in vowels:
+				if x < len(letters)-1 and letters[x+1] == 'z':
 					correctedScansion += '-'
 					continue
-				elif (letters[x-1] == 'η' or letters[x-1] == 'ω') and letters[x] == 'z':
-					if correctedScansion.endswith('?'):
-						(head, sep, tail) = correctedScansion.rpartition('?')
-						correctedScansion = head + '-'
-					else:
-						correctedScansion += '-'
-					continue
-				elif x > 1 and (letters[x-1] + letters[x] in diphtongs) and (letters[x-1] + letters[x] != 'οι') and (letters[x-1] + letters[x] != 'αι') and letters[x+1] not in vowels:
-					if correctedScansion.endswith('?'):
-						(head, sep, tail) = correctedScansion.rpartition('?')
-						correctedScansion = head + '-'
-					else:
-						correctedScansion += '-'
-					continue
-				elif (letters[x+1] + letters[x+2] in diphtongs):
-					if letters[x-1] in vowels and correctedScansion.endswith('?'):
-						(head, sep, tail) = correctedScansion.rpartition('?')
-						correctedScansion = head + '-'
-					else:
-						correctedScansion += '-'
-					continue
-				elif letters[x+1] in consonants and letters[x+2] in consonants and not re.match(r'[βγδπτκφχθ][λρνμ]', letters[x+1] + letters[x+2]):
+				elif x < len(letters)-2 and (letters[x+1] + letters[x+2] in diphtongs or letters[x+1] + letters[x+2] in ['αι', 'οι']):
 					correctedScansion += '-'
 					continue
-				elif letters[x+1] in ['ξ', 'ζ', 'ψ']:
-					correctedScansion += '-'
-					continue
-				elif x > 1 and letters[x-2] in consonants and (letters[x-1] + letters[x] in diphtongs) and (letters[x-1] + letters[x] != 'οι') and (letters[x-1] + letters[x] != 'αι'):
-					if correctedScansion.endswith('?'):
-						(head, sep, tail) = correctedScansion.rpartition('?')
-						correctedScansion = head + '-'
+				elif (letters[x] == 'ω' or letters[x] == 'η') :
+					if x < len(letters)-1 and letters[x+1] in vowels:
+						correctedScansion += '?'
+					elif x < len(letters)-1 and letters[x+1] not in vowels:
+						correctedScansion += '-'
 					else:
 						correctedScansion += '-'
 					continue
-				else:
+				elif x > 0 and (letters[x-1] + letters[x] in diphtongs):
+					correctedScansion += '-'
+					continue
+				elif x < len(letters)-2 and letters[x+1] in consonants and letters[x+2] in consonants and not re.match(r'[βγδπτκφχθ][λρνμ]', letters[x+1] + letters[x+2]):
+					correctedScansion += '-'
+					continue
+				elif x < len(letters)-1 and letters[x+1] in ['ξ', 'ζ', 'ψ']:
+					correctedScansion += '-'
+					continue
+				elif x < len(letters)-1 and (letters[x] + letters[x+1] not in diphtongs and letters[x] + letters[x+1] not in ['αι', 'οι']):
 					correctedScansion += '?'
 		self.verse.scansion += correctedScansion
 
