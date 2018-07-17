@@ -168,14 +168,14 @@ class annotator(object):
 		if len(results.items()) == 0:
 			self.success = False
 		else:
-		#TODO: used sorted transducer output to get max weight
-		#we currently just select the solution that maximizes the weight
-			weight = 0
 			for input, outputs in results.items():
-				for output in outputs:
-					if self._verify_string(output[0]) and output[1] > weight:
-						weight = output[1]
-						self.verse.scansion = output[0]
+				i = len(outputs)-1
+				while(i >= 0):
+					data = outputs[i]
+					if self._verify_string(data[0]):
+						self.verse.scansion =data[0]
+						break
+					i -= 1
 		self.verified()
 
 	#function used to correct faulty hexameter scheme: fallback to vowel-wise analysis
@@ -195,10 +195,13 @@ class annotator(object):
 		#TODO: use sorted transducer output
 			weight = 0
 			for input, outputs in results.items():
-				for output in outputs:
-					if self._verify_string(output[0]) and output[1] > weight:
-						weight = output[1]
-						self.verse.correction = output[0]
+				i = len(outputs)-1
+				while(i >= 0):
+					data = outputs[i]
+					if self._verify_string(data[0]):
+						self.verse.correction =data[0]
+						break
+					i -= 1
 		if self.state != 'finished' and self.state != 'failure':
 			self.corrected()
 
