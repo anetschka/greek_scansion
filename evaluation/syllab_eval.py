@@ -19,12 +19,10 @@ logfile = codecs.open(sys.argv[3], 'w', 'utf-8')
 mydic = {} #your syllabication
 golddic = {} #gold syllabication
 
-#read datafile (expected format: line code\tarra\tsyllabication\tscansion)
+#read datafile (expected format: line code\tverse\tsyllabication\tscansion)
 for verse in myverses:
 	contents = re.split(r'\t+', verse.rstrip('\r?\n?'))
-	syllabs = re.sub('zͅ', '', contents[2])
-	syllabs = re.sub('z', '', syllabs)
-	simplified = re.sub(r'[\. ]', '#', syllabs.rstrip('[\.;]'))
+	simplified = re.sub(r'[\. ]', '#', contents[2])
 	mydic[contents[0]] = simplified
 	
 #read goldfile (expected format: line code\tsyllabication)

@@ -83,9 +83,9 @@ for line in lines:
 		hfsa13.start_analysis()
 		if hfsa13.state == 'no_spondeus_found':
 			hfsa13.not_found()
-			scansion = hfsa13.verse.scansion + '###' + hfsa13.verse.correction
-		else:
-			scansion = hfsa13.verse.scansion
+		scansion = hfsa13.verse.scansion
+		if len(hfsa13.verse.correction) > 0 and not re.search(r'\?', hfsa13.verse.correction):
+			scansion = hfsa13.verse.correction
 		
 	elif syllable_count == 14:
 		if hfsa14.state != 'waiting':
@@ -94,9 +94,9 @@ for line in lines:
 		hfsa14.start_analysis()
 		if hfsa14.state == 'no_spondeus_found':
 			hfsa14.not_found()
-			scansion = hfsa14.verse.scansion + '###' + hfsa14.verse.correction
-		else:
-			scansion = hfsa14.verse.scansion
+		scansion = hfsa14.verse.scansion
+		if len(hfsa14.verse.correction) > 0 and not re.search(r'\?', hfsa14.verse.correction):
+			scansion = hfsa14.verse.correction		
 				
 	elif syllable_count == 15:
 		if hfsa15.state != 'waiting':
@@ -105,9 +105,9 @@ for line in lines:
 		hfsa15.start_analysis()
 		if hfsa15.state == 'no_spondeus_found':
 			hfsa15.not_found()		
-			scansion = hfsa15.verse.scansion + '###' + hfsa15.verse.correction
-		else:
-			scansion = hfsa15.verse.scansion
+		scansion = hfsa15.verse.scansion
+		if len(hfsa15.verse.correction) > 0 and re.search(r'[^\?]', hfsa15.verse.correction):
+			scansion = hfsa15.verse.correction
 		
 	elif syllable_count == 16:
 		if hfsa16.state != 'waiting':
@@ -116,9 +116,9 @@ for line in lines:
 		hfsa16.start_analysis()
 		if hfsa16.state == 'no_spondeus_found':
 			hfsa16.not_found()
-			scansion = hfsa16.verse.scansion + '###' + hfsa16.verse.correction
-		else:
-			scansion = hfsa16.verse.scansion
+		scansion = hfsa16.verse.scansion
+		if len(hfsa16.verse.correction) > 0 and not re.search(r'\?', hfsa16.verse.correction):
+			scansion = hfsa16.verse.correction
 
 	#output
 	if len(scansion) == 0:

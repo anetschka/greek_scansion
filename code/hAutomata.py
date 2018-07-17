@@ -2,6 +2,7 @@ import re
 from transducer import fallbackTransducer, vowelTransducer
 from transitions.extensions import HierarchicalMachine as Machine
 from transitions.extensions.states import add_state_features, Tags
+from preprocessing import preprocessor
 
 #class containing linguistic rules
 class ruleset(object):	
@@ -9,7 +10,8 @@ class ruleset(object):
 	#long by nature
 	def rule1(self, text, position):
 		current = text[position-1]
-		if re.search(r'[ηω]', current):
+		following = text[position]
+		if re.search(r'[ηω]', current) and re.search(r'[ηω][^αιουεωη]', current + following):
 			return True
 		
 	#long by nature
@@ -20,6 +22,7 @@ class ruleset(object):
 			return True
 		
 	#long by position
+	#TODO: remove also from description if not useful
 	def rule3(self, text, position):
 		following = text[position]
 		if re.match(r'^(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', following):
@@ -41,9 +44,8 @@ class ruleset(object):
 		
 	#hiat
 	def hiat(self, text, position):
-		current = text[position-1]
 		following = text[position]
-		if re.search(r'[αιουεωη]{2,*}', current+following):
+		if re.search(r'^[αιουεωη]', following):
 		#if re.search(r'[αιουεωη]{1,*}$', current) and re.match(r'^[αιουεωη]{1,*}', following):
 			return True
 
@@ -166,20 +168,14 @@ class annotator(object):
 		if len(results.items()) == 0:
 			self.success = False
 		else:
-		#lets output all valid solutions
-		#TODO: develop selection function
-			for input, outputs in results.items():
-				for output in outputs:	
-					if self._verify_string(output[0]):
-						self.verse.correction = self.verse.correction + '###' + output[0]
+		#TODO: used sorted transducer output to get max weight
 		#we currently just select the solution that maximizes the weight
-		#weight = 0
-		#for input, outputs in results.items():
-		#	for output in outputs:
-		#		if output[1] > weight:
-		#			weight = output[1]
-		#			self.verse.scansion = output[0]
-		#self._verify_output()
+			weight = 0
+			for input, outputs in results.items():
+				for output in outputs:
+					if self._verify_string(output[0]) and output[1] > weight:
+						weight = output[1]
+						self.verse.scansion = output[0]
 		self.verified()
 
 	#function used to correct faulty hexameter scheme: fallback to vowel-wise analysis
@@ -188,23 +184,31 @@ class annotator(object):
 		self.verse.correction = re.sub(r'-\?-', '---', self.verse.correction)
 		results = self.vowelTransducer.apply(self.verse.correction).extract_paths(output='dict')
 		if len(results.items()) == 0:
-			self.success = False
-		else:		
-		#TODO: develop selection function
-		#or output arg max solution
+			##check for synizesis
+			if re.search(r'ε[ωα]', self.verse.verse):
+				self.verse.verse = re.sub(r'ε[ωα]', 'ω', self.verse.verse)
+				self.verse.syllables = re.split(r'[ \.]', preprocessor.papakitsos_syllabify(self, self.verse.verse))
+				self._correct()
+			else:
+				self.success = False
+		else:
+		#TODO: use sorted transducer output
+			weight = 0
 			for input, outputs in results.items():
 				for output in outputs:
-					if self._verify_string(output[0]):	
-						self.verse.correction = self.verse.correction + '###corrected###' + output[0]
-		self.corrected()
+					if self._verify_string(output[0]) and output[1] > weight:
+						weight = output[1]
+						self.verse.correction = output[0]
+		if self.state != 'finished' and self.state != 'failure':
+			self.corrected()
 
 	#this function assigns length vowel by vowel if all other processing before has failed
-	#TODO: either here or in voweltransducer - try to merge superfluous syllables
 	def _correct_string(self):
 		diphtongs = ['υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
 		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
 		letters = list(filter(lambda s: re.match(r'[^ ]', s), self.verse.verse))
+		self.verse.correction = ''
 		for x in range(0, len(letters)):
 			if letters[x] in vowels:
 				if x < len(letters)-1 and letters[x+1] == 'z':
@@ -234,9 +238,12 @@ class annotator(object):
 					self.verse.correction += '?'
 
 	def _search_long(self, position):
-		if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
+		#if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
+		if self.rules.circumflex(self.verse.syllables, position):
 			return True
-		elif (self.rules.rule1(self.verse.syllables, position) or self.rules.rule2(self.verse.syllables, position)) and not self.rules.hiat(self.verse.syllables, position):
+		elif self.rules.rule1(self.verse.syllables, position):
+			return True
+		elif self.rules.rule2(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
 			return True
 		elif self.rules.rule4(self.verse.syllables, position) and not self.rules.muta(self.verse.syllables, position):
 			return True
@@ -891,11 +898,10 @@ class SimpleFSA(annotator):
 		annotator.__init__(self, name)
 		self.machine = Machine(model=self, states=SimpleFSA._states, initial='waiting')
 		self.machine.add_transition(trigger='start_analysis', source='waiting', dest='analysing', after='_analyse')
-		self.machine.add_transition('finished_analysis', 'analysing', 'finished')
+		self.machine.add_transition('corrected', 'analysing', 'finished')
 
 	def verify(self, line):
 		return annotator._verify_string(self, line)
 	
 	def _analyse(self):
-		annotator._correct_string(self)
-		self.finished_analysis()
+		annotator._correct(self)
