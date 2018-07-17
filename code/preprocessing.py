@@ -48,6 +48,8 @@ class preprocessor(object):
 	#removes accents, lowercases
 	#TODO: this needs to be systematised and shortened
 	def normalise(self, text):
+		#remove erroneous signs
+		text = re.sub(r'[\[\]]', '', text)
 		#some regexes have to be applied more than once since diacritics can be combined
 		text = re.sub(r'ῆ', 'ηz', text) #replace circumflex by something that is easier to handle
 		text = re.sub(r'ἣ', 'η', text)

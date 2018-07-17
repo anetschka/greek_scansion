@@ -192,14 +192,13 @@ class annotator(object):
 			else:
 				self.success = False
 		else:
-		#TODO: use sorted transducer output
-			weight = 0
 			for input, outputs in results.items():
 				i = len(outputs)-1
 				while(i >= 0):
 					data = outputs[i]
-					if self._verify_string(data[0]):
-						self.verse.correction =data[0]
+					#the difference between the corrected string and the number of syllables should not be too large
+					if len(self.verse.correction) <= len(self.verse.syllables)+1 and self._verify_string(data[0]):
+						self.verse.correction = data[0]
 						break
 					i -= 1
 		if self.state != 'finished' and self.state != 'failure':
@@ -293,8 +292,8 @@ class HFSA13(annotator):
 		self.machine.add_transition('not_found', 'no_spondeus_found', 'fallback')
 		self.machine.add_transition('verified', 'fallback', 'correction', unless=[self._is_successful])
 		self.machine.add_transition('verified', 'fallback', 'success', conditions=[self._is_successful])
-		self.machine.add_transition('verified', 'found_two_spondees', 'success', conditions=[self._is_successful])
-		self.machine.add_transition('verified', 'found_two_spondees', 'correction', unless=[self._is_successful])
+		self.machine.add_transition('verified', 'found_four_spondees', 'success', conditions=[self._is_successful])
+		self.machine.add_transition('verified', 'found_four_spondees', 'correction', unless=[self._is_successful])
 		self.machine.add_transition('corrected', 'correction', 'success', conditions=[self._is_successful])
 		self.machine.add_transition('corrected', 'correction', 'failure', unless=[self._is_successful])
 
