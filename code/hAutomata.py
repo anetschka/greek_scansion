@@ -1,5 +1,5 @@
 import re
-from transducer import fallbackTransducer, vowelTransducer
+from transducer import fallbackTransducer
 from transitions.extensions import HierarchicalMachine as Machine
 from transitions.extensions.states import add_state_features, Tags
 from preprocessing import preprocessor
@@ -84,7 +84,6 @@ class annotator(object):
 		self.third_found = False
 		self.fourth_found = False
 		self.fallbackTransducer = fallbackTransducer()
-		self.vowelTransducer = vowelTransducer()
 		self.success = True
 			
 	def _reset_positions(self):		
@@ -158,31 +157,19 @@ class annotator(object):
 				if search_result:
 					s_units[x] = '-'
 		self.verse.scansion = ''.join(s_units)
-		#actually, we can already make some very obvious corrections
-		self.verse.scansion = re.sub(r'-\?-', '---', self.verse.scansion)
-		self.verse.scansion = re.sub(r'-\?\?-X', '-**-X', self.verse.scansion)
-		self.verse.scansion = re.sub(r'-\?-X', '---X', self.verse.scansion)
 		#apply finite-state transducer
-		results = self.fallbackTransducer.apply(self.verse.scansion).extract_paths(output='dict')
+		results = self._apply_transducer()
 		#failure if transducer does not accept input string
 		if len(results.items()) == 0:
 			self.success = False
 		else:
-			for input, outputs in results.items():
-				i = len(outputs)-1
-				while(i >= 0):
-					data = outputs[i]
-					if self._verify_string(data[0]):
-						self.verse.scansion =data[0]
-						break
-					i -= 1
+			self._set_transducerResult(results, mode='fallback')
 		self.verified()
 
 	#function used to correct faulty hexameter scheme: fallback to vowel-wise analysis
 	def _correct(self):
 		self._correct_string()
-		self.verse.correction = re.sub(r'-\?-', '---', self.verse.correction)
-		results = self.vowelTransducer.apply(self.verse.correction).extract_paths(output='dict')
+		results = self._apply_transducer(mode='correction')
 		if len(results.items()) == 0:
 			##check for synizesis
 			if re.search(r'ε[ωα]', self.verse.verse):
@@ -192,17 +179,33 @@ class annotator(object):
 			else:
 				self.success = False
 		else:
-			for input, outputs in results.items():
+			self._set_transducerResult(results, mode='correction')
+		if self.state != 'finished' and self.state != 'failure':
+			self.corrected()
+
+	def _apply_transducer(self, mode = 'fallback'):
+		if mode == 'fallback':
+			line = self.verse.scansion
+		else:
+			line = self.verse.correction
+		#actually, we can already make some very obvious corrections
+		line = re.sub(r'-\?-', '---', line)
+		line = re.sub(r'-\?\?-X', '-**-X', line)
+		line = re.sub(r'-\?-X', '---X', line)
+		return self.fallbackTransducer.apply(line).extract_paths(output='dict')
+
+	def _set_transducerResult(self, results, mode = 'fallback'):
+		for input, outputs in results.items():
 				i = len(outputs)-1
 				while(i >= 0):
 					data = outputs[i]
-					#the difference between the corrected string and the number of syllables should not be too large
-					if len(self.verse.correction) <= len(self.verse.syllables)+1 and self._verify_string(data[0]):
+					if self._verify_string(data[0]) and mode == 'fallback':
+						self.verse.scansion = data[0]
+						break
+					elif self._verify_string(data[0]):
 						self.verse.correction = data[0]
 						break
 					i -= 1
-		if self.state != 'finished' and self.state != 'failure':
-			self.corrected()
 
 	#this function assigns length vowel by vowel if all other processing before has failed
 	def _correct_string(self):
@@ -213,7 +216,9 @@ class annotator(object):
 		self.verse.correction = ''
 		for x in range(0, len(letters)):
 			if letters[x] in vowels:
-				if x < len(letters)-1 and letters[x+1] == 'z':
+				if x == len(letters)-1:
+					self.verse.correction += 'X'
+				elif x < len(letters)-1 and letters[x+1] == 'z':
 					self.verse.correction += '-'
 					continue
 				elif x < len(letters)-2 and (letters[x+1] + letters[x+2] in diphtongs or letters[x+1] + letters[x+2] in ['αι', 'οι']):
