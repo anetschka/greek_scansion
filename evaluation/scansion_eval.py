@@ -23,14 +23,14 @@ golddic = {} #gold annotation
 for verse in myverses:
 	contents = re.split(r'\t+', verse.rstrip('\r?\n?'))
 	if len(contents) == 4:
-		mydic[contents[0]] = ''.join(filter(lambda s: re.match(r'[-\?\*]', s), contents[3]))
+		mydic[contents[0]] = ''.join(filter(lambda s: re.match(r'[-\*X]', s), contents[3]))
 	elif len(contents) == 3:
-		mydic[contents[0]] = ''.join(filter(lambda s: re.match(r'[-\?\*]', s), contents[2]))
+		mydic[contents[0]] = ''.join(filter(lambda s: re.match(r'[-\*X]', s), contents[2]))
 	
 #read gold annotations
 for verse in goldverses:
 	contents = re.split(r'\t+', verse.rstrip('\r?\n?'))
-	golddic[contents[0]] = ''.join(filter(lambda s: re.match(r'[-\?\*]', s), contents[3]))
+	golddic[contents[0]] = ''.join(filter(lambda s: re.match(r'[-\*X]', s), contents[3]))
 	
 #number verses in sample
 sample_items = 0

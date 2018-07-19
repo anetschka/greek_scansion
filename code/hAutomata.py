@@ -11,14 +11,19 @@ class ruleset(object):
 	def rule1(self, text, position):
 		current = text[position-1]
 		following = text[position]
-		if re.search(r'[ηω]', current) and re.search(r'[ηω][^αιουεωη]', current + following):
+		if re.search(r'[ηω]', current) and re.search(r'[ηω]([αιουεωη][t]|[ςβγδθκλμνπρστφχξζψ]|[ηω])', current + following):
 			return True
 		
 	#long by nature
+	#TODO: change also in description
 	def rule2(self, text, position):
 		current = text[position-1]
+		following = text[position]
+		if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)([αιουεωη][t]|[ςβγδθκλμνπρστφχξζψ])', current+following):
+		#the following used to be optimal 
+		#if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', current):
 		#if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
-		if re.search(r'(υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
+		#if re.search(r'(υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
 			return True
 		
 	#long by position
@@ -43,8 +48,13 @@ class ruleset(object):
 			return True
 		
 	#hiat
+	#TODO:  rule for hiat must be refined: not a diphtong, but a sequence of two vowels
+	#TODO: remove from description if no longer needed
 	def hiat(self, text, position):
+		#current = text[position-1]
 		following = text[position]
+		#if re.search(r'[αιουεωη]$', current) and re.search(r'^[αιουεωη]', following):
+		#if re.search(r'[αιουεωη][αιουεωη]', current+following) and not re.search:
 		if re.search(r'^[αιουεωη]', following):
 		#if re.search(r'[αιουεωη]{1,*}$', current) and re.match(r'^[αιουεωη]{1,*}', following):
 			return True
@@ -139,7 +149,7 @@ class annotator(object):
 		self.success = self._verify_string(self.verse.scansion)
 		self.verified()
 
-	def _verify_string(self, string):
+	def _verify_string(self, string):		
 		s_units = list(filter(lambda s: re.match(r'[-\?\*]', s), string))
 		for x in range(0, len(s_units)-2):
 			if self._search_long(x+1) and s_units[x] == '*':
@@ -171,11 +181,12 @@ class annotator(object):
 		self._correct_string()
 		results = self._apply_transducer(mode='correction')
 		if len(results.items()) == 0:
-			##check for synizesis
-			if re.search(r'ε[ωα]', self.verse.verse):
-				self.verse.verse = re.sub(r'ε[ωα]', 'ω', self.verse.verse)
+			#check for synizesis
+			if re.search(r'ε[ωαο]', self.verse.verse):
+				self.verse.verse = re.sub(r'ε[ωαο]', 'ω', self.verse.verse)
 				self.verse.syllables = re.split(r'[ \.]', preprocessor.papakitsos_syllabify(self, self.verse.verse))
 				self._correct()
+			#no synizesis possible - analysis has eventually failed
 			else:
 				self.success = False
 		else:
@@ -206,13 +217,16 @@ class annotator(object):
 						self.verse.correction = data[0]
 						break
 					i -= 1
+					if i == -1:
+						self.success = False
 
 	#this function assigns length vowel by vowel if all other processing before has failed
+	#TODO: adapt to new rules
 	def _correct_string(self):
 		diphtongs = ['υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
 		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
 		consonants = ['ς', 'β', 'γ', 'δ', 'θ', 'κ', 'λ', 'μ', 'ν', 'π', 'ρ', 'σ', 'τ', 'φ', 'χ', 'ξ', 'ζ', 'ψ']
-		letters = list(filter(lambda s: re.match(r'[^ ]', s), self.verse.verse))
+		letters = list(''.join(self.verse.syllables))
 		self.verse.correction = ''
 		for x in range(0, len(letters)):
 			if letters[x] in vowels:
@@ -221,19 +235,25 @@ class annotator(object):
 				elif x < len(letters)-1 and letters[x+1] == 'z':
 					self.verse.correction += '-'
 					continue
-				elif x < len(letters)-2 and (letters[x+1] + letters[x+2] in diphtongs or letters[x+1] + letters[x+2] in ['αι', 'οι']):
-					self.verse.correction += '-'
-					continue
-				elif (letters[x] == 'ω' or letters[x] == 'η') :
-					if x < len(letters)-1 and letters[x+1] in vowels:
-						self.verse.correction += '?'
-					elif x < len(letters)-1 and letters[x+1] not in vowels:
+				#elif x < len(letters)-2 and (letters[x+1] + letters[x+2] in diphtongs or letters[x+1] + letters[x+2] in ['αι', 'οι']):
+				#	self.verse.correction += '-'
+				#	continue
+				elif (letters[x] == 'η' or letters[x] == 'ω') :					
+					if (x < len(letters)-1 and (letters[x+1] not in vowels or letters[x+1] in ['η', 'ω'])):
 						self.verse.correction += '-'
+					elif x < len(letters)-1 and letters[x+1] in vowels:
+						if x < len(letters)-2 and letters[x+2] == 't':
+							self.verse.correction += '-'
+						else:
+							self.verse.correction += '?'
 					else:
 						self.verse.correction += '-'
 					continue
 				elif x > 0 and (letters[x-1] + letters[x] in diphtongs):
-					self.verse.correction += '-'
+					if x < len(letters)-1 and letters[x+1] == 't':
+						self.verse.correction += '?'
+					else:
+						self.verse.correction += '-'
 					continue
 				elif x < len(letters)-2 and letters[x+1] in consonants and letters[x+2] in consonants and not re.match(r'[βγδπτκφχθ][λρνμ]', letters[x+1] + letters[x+2]):
 					self.verse.correction += '-'
@@ -250,7 +270,8 @@ class annotator(object):
 			return True
 		elif self.rules.rule1(self.verse.syllables, position):
 			return True
-		elif self.rules.rule2(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
+		elif self.rules.rule2(self.verse.syllables, position):
+		#elif self.rules.rule2(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
 			return True
 		elif self.rules.rule4(self.verse.syllables, position) and not self.rules.muta(self.verse.syllables, position):
 			return True

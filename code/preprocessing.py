@@ -286,9 +286,10 @@ class preprocessor(object):
 		resultsent = re.sub(r'(.)ß', '.\g<1>', resultsent)
 		#however, a single consonant should not be separated from the next syllable
 		resultsent = re.sub(r'(\.[ςβγδθκλμνπρστφχξζψ])\.', '\g<1>', resultsent)
-		#treatment of remaining accents
-		resultsent = re.sub(r'([ιυ])\.̈', '.\g<1>.', resultsent)
-		resultsent = re.sub(r'ϊ', 'ι', resultsent)
+		resultsent = re.sub(r' ([ςβγδθκλμνπρστφχξζψ])\.', ' \g<1>', resultsent)
+		#treatment of remaining accents: marking of trema
+		resultsent = re.sub(r'([ιυ])\.̈', '.\g<1>t.', resultsent)
+		resultsent = re.sub(r'ϊ', 'ιt', resultsent)
 		#treatment of consonants at end of word
 		resultsent = re.sub(r'\.([ςβγδθκλμνπρστφχξζψ] )', '\g<1>', resultsent)
 		#last consonant in verse or word
@@ -298,7 +299,7 @@ class preprocessor(object):
 		resultsent = re.sub(r'\.\.', '.', resultsent)
 		resultsent = re.sub(r'\. ', ' ', resultsent)
 		resultsent = re.sub(r' \.', ' ', resultsent)
-
+		#resultsent = re.sub(r' ', '# ', resultsent) #place a marker at word endings
 		return resultsent
 		
 	#count the number of syllables in the input verse

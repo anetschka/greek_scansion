@@ -86,10 +86,12 @@ for line in lines:
 		hfsa13.start_analysis()
 		if hfsa13.state == 'no_spondeus_found':
 			hfsa13.not_found()
-		if not re.search(r'\?', hfsa13.verse.scansion):
+		if not re.search(r'\?', hfsa13.verse.scansion) and hfsa13.state == 'success':
 			scansion = hfsa13.verse.scansion
 		elif len(hfsa13.verse.correction) > 0 and not re.search(r'\?', hfsa13.verse.correction):
 			scansion = hfsa13.verse.correction
+		else:
+			print(' '.join([hfsa13.state, vals[0]]))
 		
 	elif syllable_count == 14:
 		if hfsa14.state != 'waiting':
@@ -98,10 +100,12 @@ for line in lines:
 		hfsa14.start_analysis()
 		if hfsa14.state == 'no_spondeus_found':
 			hfsa14.not_found()
-		if not  re.search(r'\?', hfsa14.verse.scansion):
+		if not  re.search(r'\?', hfsa14.verse.scansion) and hfsa14.state == 'success':
 			scansion = hfsa14.verse.scansion
 		elif len(hfsa14.verse.correction) > 0 and not re.search(r'\?', hfsa14.verse.correction):
-			scansion = hfsa14.verse.correction		
+			scansion = hfsa14.verse.correction
+		else:
+			print(' '.join([hfsa14.state, vals[0]]))
 				
 	elif syllable_count == 15:
 		if hfsa15.state != 'waiting':
@@ -110,10 +114,12 @@ for line in lines:
 		hfsa15.start_analysis()
 		if hfsa15.state == 'no_spondeus_found':
 			hfsa15.not_found()		
-		if not re.search(r'\?', hfsa15.verse.scansion):
+		if not re.search(r'\?', hfsa15.verse.scansion) and hfsa15.state == 'success':
 			scansion = hfsa15.verse.scansion
 		elif len(hfsa15.verse.correction) > 0 and not re.search(r'\?', hfsa15.verse.correction):
 			scansion = hfsa15.verse.correction
+		else:
+			print(' '.join([hfsa15.state, vals[0]]))
 		
 	elif syllable_count == 16:
 		if hfsa16.state != 'waiting':
@@ -122,10 +128,12 @@ for line in lines:
 		hfsa16.start_analysis()
 		if hfsa16.state == 'no_spondeus_found':
 			hfsa16.not_found()
-		if not re.search(r'\?', hfsa16.verse.scansion):
+		if not re.search(r'\?', hfsa16.verse.scansion) and hfsa16.state == 'success':
 			scansion = hfsa16.verse.scansion
 		elif len(hfsa16.verse.correction) > 0 and not re.search(r'\?', hfsa16.verse.correction):
 			scansion = hfsa16.verse.correction
+		else:
+			print(' '.join([hfsa16.state, vals[0]]))
 
 	#output
 	if len(scansion) == 0:
