@@ -56,13 +56,18 @@ for key in mydic.keys():
 		if re.search(r'[-\?\*]+', mydic[key]) and mydic[key] == golddic[key]:
 			correct_items += 1
 		#verse has not been annotated: fn
-		elif not re.search(r'[-\?\*]+', mydic[key]):
+		elif not re.search(r'[-\?\*]+', mydic[key]) and len(golddic[key]) > 0:
 			fn_items += 1
-		else:
-			fp_items += 1
+			#log recall errors
 			print(key, file = logfile)
 			print(mydic[key], file = logfile)
 			print(golddic[key], file = logfile)
+		else:
+			fp_items += 1
+			#log precision errors
+			#print(key, file = logfile)
+			#print(mydic[key], file = logfile)
+			#print(golddic[key], file = logfile)
 			
 		#syllable-wise evaluation
 		#goldsyllabs = list(golddic[key])

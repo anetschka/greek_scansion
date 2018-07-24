@@ -203,6 +203,7 @@ class annotator(object):
 		line = re.sub(r'-\?-', '---', line)
 		line = re.sub(r'-\?\?-X', '-**-X', line)
 		line = re.sub(r'-\?-X', '---X', line)
+		line = re.sub(r'-\?\?-\?X', '-**-X', line)
 		return self.fallbackTransducer.apply(line).extract_paths(output='dict')
 
 	def _set_transducerResult(self, results, mode = 'fallback'):
@@ -213,9 +214,11 @@ class annotator(object):
 					if self._verify_string(data[0]) and mode == 'fallback':
 						self.verse.scansion = data[0]
 						break
-					elif self._verify_string(data[0]):
+					elif mode == 'correction':
 						self.verse.correction = data[0]
-						break
+					#elif self._verify_string(data[0]):
+					#	self.verse.correction = data[0]
+					#	break
 					i -= 1
 					if i == -1:
 						self.success = False
