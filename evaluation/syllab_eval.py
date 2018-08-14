@@ -23,6 +23,7 @@ golddic = {} #gold syllabication
 for verse in myverses:
 	contents = re.split(r'\t+', verse.rstrip('\r?\n?'))
 	simplified = re.sub(r'[\. ]', '#', contents[2])
+	simplified = re.sub(r'[zt]', '', simplified)
 	mydic[contents[0]] = simplified
 	
 #read goldfile (expected format: line code\tsyllabication)

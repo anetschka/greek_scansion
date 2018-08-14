@@ -59,15 +59,15 @@ for key in mydic.keys():
 		elif not re.search(r'[-\?\*]+', mydic[key]) and len(golddic[key]) > 0:
 			fn_items += 1
 			#log recall errors
-			print(key, file = logfile)
-			print(mydic[key], file = logfile)
-			print(golddic[key], file = logfile)
-		else:
-			fp_items += 1
-			#log precision errors
 			#print(key, file = logfile)
 			#print(mydic[key], file = logfile)
 			#print(golddic[key], file = logfile)
+		elif len(golddic[key]) > 0:
+			fp_items += 1
+			#log precision errors
+			print(key, file = logfile)
+			print(mydic[key], file = logfile)
+			print(golddic[key], file = logfile)
 			
 		#syllable-wise evaluation
 		#goldsyllabs = list(golddic[key])
