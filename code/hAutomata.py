@@ -186,7 +186,7 @@ class annotator(object):
 				self.verse.verse = re.sub(r'ε[ωαο]', 'ω', self.verse.verse)
 				self.verse.syllables = re.split(r'[ \.]', preprocessor.papakitsos_syllabify(self, self.verse.verse))
 				self._correct()
-			#no synizesis possible - analysis has eventually failed
+			#no synizesis or possible - analysis has eventually failed
 			else:
 				self.success = False
 		else:
