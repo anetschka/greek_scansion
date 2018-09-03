@@ -38,15 +38,7 @@ sample_items = 0
 fn_items = 0
 #false positive verses
 fp_items = 0
-#number of evaluated syllables 
-#evaluated_syllabs = 0
-#correct verses and syllables
 correct_items = 0
-#correct_syllabs = 0
-#false negative syllables
-#fn_syllabs = 0
-#false positive syllables
-#fp_syllabs = 0
 
 #string comparison for each verse
 for key in mydic.keys():
@@ -55,6 +47,8 @@ for key in mydic.keys():
 		#verse-wise evaluation
 		if re.search(r'[-\?\*]+', mydic[key]) and mydic[key] == golddic[key]:
 			correct_items += 1
+		elif len(mydic[key]) == 0 and len(golddic[key]) == 0:
+			correct_items += 1
 		#verse has not been annotated: fn
 		elif not re.search(r'[-\?\*]+', mydic[key]) and len(golddic[key]) > 0:
 			fn_items += 1
@@ -62,35 +56,17 @@ for key in mydic.keys():
 			#print(key, file = logfile)
 			#print(mydic[key], file = logfile)
 			#print(golddic[key], file = logfile)
-		elif len(golddic[key]) > 0:
+		else:
 			fp_items += 1
 			#log precision errors
 			print(key, file = logfile)
 			print(mydic[key], file = logfile)
 			print(golddic[key], file = logfile)
 			
-		#syllable-wise evaluation
-		#goldsyllabs = list(golddic[key])
-		#mysyllabs = list(mydic[key])
-		#for x in range(0, min(len(goldsyllabs), len(mysyllabs))):
-			#evaluated_syllabs += 1
-			#syllable has been annotated
-			#if re.match(r'[-\?\*]', mysyllabs[x]) and mysyllabs[x] == goldsyllabs[x]:
-			#	correct_syllabs += 1
-			#syllable has not been annotated
-			#TODO: this will never happen since the shorter string is selected in the for-loop above
-			#elif not re.match(r'[-\?\*]', mysyllabs[x]) and re.match(r'[-\?\*]', goldsyllabs[x]):
-			#	fn_syllabs += 1
-			#else:
-			#	fp_syllabs += 1
-
 logfile.close()
 			
 print('Verses in sample:')
 print(sample_items)
-
-#print('Syllables evaluated:')
-#print(evaluated_syllabs)
 
 #calculate verse precision
 precision = correct_items/(correct_items + fp_items)
@@ -106,11 +82,3 @@ print(recall)
 f = (2*precision*recall)/(precision + recall)
 print('F measure:')
 print(f)
-
-#syllable precision
-#print('Syllable precision:')
-#print(correct_syllabs/(correct_syllabs + fp_syllabs))
-
-#syllable recall
-#print('Syllable recall:')
-#print(correct_syllabs/(correct_syllabs + fn_syllabs))

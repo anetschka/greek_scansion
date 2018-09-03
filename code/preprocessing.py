@@ -113,7 +113,6 @@ class preprocessor(object):
 		text = re.sub(r'ὺ', 'υ', text)
 		text = re.sub(r'ὗ', 'ῦ', text)
 		text = re.sub(r'ὕ', 'υ', text)
-		#text = re.sub(r'ϋ', 'υ', text)
 		text = re.sub(r'ὑ', 'υ', text)
 		text = re.sub(r'ῦ', 'υz', text)
 		text = re.sub(r'ύ', 'υ', text)
@@ -299,7 +298,6 @@ class preprocessor(object):
 		resultsent = re.sub(r'\.\.', '.', resultsent)
 		resultsent = re.sub(r'\. ', ' ', resultsent)
 		resultsent = re.sub(r' \.', ' ', resultsent)
-		#resultsent = re.sub(r' ', '# ', resultsent) #place a marker at word endings
 		return resultsent
 		
 	#count the number of syllables in the input verse

@@ -8,15 +8,14 @@ from preprocessing import preprocessor
 class ruleset(object):	
 		
 	#long by nature
-	def rule1(self, text, position):
+	def rule_nl1(self, text, position):
 		current = text[position-1]
 		following = text[position]
 		if re.search(r'[ηω]', current) and re.search(r'[ηω]([αιουεωη][t]|[ςβγδθκλμνπρστφχξζψ]|[ηω])', current + following):
 			return True
 		
 	#long by nature
-	#TODO: change also in description
-	def rule2(self, text, position):
+	def rule_nl2(self, text, position):
 		current = text[position-1]
 		following = text[position]
 		if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)([αιουεωη][t]|[ςβγδθκλμνπρστφχξζψ])', current+following):
@@ -27,40 +26,21 @@ class ruleset(object):
 			return True
 		
 	#long by position
-	#TODO: remove also from description if not useful
-	def rule3(self, text, position):
-		following = text[position]
-		if re.match(r'^(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', following):
-			return True
-		
-	#long by position
-	def rule4(self, text, position):
+	def rule_pl(self, text, position):
 		current = text[position-1]
 		following = text[position]
 		if re.search(r'([αιουεωη][ςβγδθκλμνπρστφχξζψ]{2,}|[αιουεωη][ξζψ])', current+following):
 			return True
 		
 	#muta cum liquida
-	def muta(self, text, position):
+	def rule_ml(self, text, position):
 		current = text[position-1]
 		following = text[position]
 		if re.search(r'[αιουεωη][βγδπτκφχθ][λρνμ]', current+following):
 			return True
-		
-	#hiat
-	#TODO:  rule for hiat must be refined: not a diphtong, but a sequence of two vowels
-	#TODO: remove from description if no longer needed
-	def hiat(self, text, position):
-		#current = text[position-1]
-		following = text[position]
-		#if re.search(r'[αιουεωη]$', current) and re.search(r'^[αιουεωη]', following):
-		#if re.search(r'[αιουεωη][αιουεωη]', current+following) and not re.search:
-		if re.search(r'^[αιουεωη]', following):
-		#if re.search(r'[αιουεωη]{1,*}$', current) and re.match(r'^[αιουεωη]{1,*}', following):
-			return True
 
 	#circumflex
-	def circumflex(self, text, position):
+	def rule_zf(self, text, position):
 		current = text[position-1]
 		if re.search(r'z', current):
 			return True
@@ -95,6 +75,9 @@ class annotator(object):
 		self.fourth_found = False
 		self.fallbackTransducer = fallbackTransducer()
 		self.success = True
+		self.synizesis = False
+		self.scansionLength = 1
+		self.correctionLength = 0
 			
 	def _reset_positions(self):		
 		self.positions = []
@@ -105,7 +88,10 @@ class annotator(object):
 		self.third_found = False
 		self.fourth_found = False
 		self.success = True
-		
+		self.synizesis = False
+		self.scansionLength = 1
+		self.correctionLength = 0
+
 	def set_text(self, verse, syllables):
 		self.verse.verse = verse
 		self.verse.syllables = syllables
@@ -172,7 +158,10 @@ class annotator(object):
 		#failure if transducer does not accept input string
 		if len(results.items()) == 0:
 			self.success = False
+			self.scansionLength = 0
 		else:
+			lengths = [len(v) for v in results.values()]
+			self.scansionLength = lengths[0]
 			self._set_transducerResult(results, mode='fallback')
 		self.verified()
 
@@ -185,11 +174,14 @@ class annotator(object):
 			if re.search(r'ε[ωαο]', self.verse.verse):
 				self.verse.verse = re.sub(r'ε[ωαο]', 'ω', self.verse.verse)
 				self.verse.syllables = re.split(r'[ \.]', preprocessor.papakitsos_syllabify(self, self.verse.verse))
+				self.synizesis = True
 				self._correct()
 			#no synizesis or possible - analysis has eventually failed
 			else:
 				self.success = False
 		else:
+			lengths = [len(v) for v in results.values()]
+			self.correctionLength = lengths[0]
 			self._set_transducerResult(results, mode='correction')
 		if self.state != 'finished' and self.state != 'failure':
 			self.corrected()
@@ -216,15 +208,11 @@ class annotator(object):
 						break
 					elif mode == 'correction':
 						self.verse.correction = data[0]
-					#elif self._verify_string(data[0]):
-					#	self.verse.correction = data[0]
-					#	break
 					i -= 1
 					if i == -1:
 						self.success = False
 
 	#this function assigns length vowel by vowel if all other processing before has failed
-	#TODO: adapt to new rules
 	def _correct_string(self):
 		diphtongs = ['υι', 'ει', 'αυ', 'ευ', 'ου', 'ηι', 'ωι', 'ηυ']
 		vowels = ['α', 'ι', 'ο', 'υ', 'ε', 'η','ω']
@@ -238,9 +226,6 @@ class annotator(object):
 				elif x < len(letters)-1 and letters[x+1] == 'z':
 					self.verse.correction += '-'
 					continue
-				#elif x < len(letters)-2 and (letters[x+1] + letters[x+2] in diphtongs or letters[x+1] + letters[x+2] in ['αι', 'οι']):
-				#	self.verse.correction += '-'
-				#	continue
 				elif (letters[x] == 'η' or letters[x] == 'ω') :					
 					if (x < len(letters)-1 and (letters[x+1] not in vowels or letters[x+1] in ['η', 'ω'])):
 						self.verse.correction += '-'
@@ -268,15 +253,13 @@ class annotator(object):
 					self.verse.correction += '?'
 
 	def _search_long(self, position):
-		#if self.rules.circumflex(self.verse.syllables, position) or self.rules.rule3(self.verse.syllables, position):
-		if self.rules.circumflex(self.verse.syllables, position):
+		if self.rules.rule_zf(self.verse.syllables, position):
 			return True
-		elif self.rules.rule1(self.verse.syllables, position):
+		elif self.rules.rule_nl1(self.verse.syllables, position):
 			return True
-		elif self.rules.rule2(self.verse.syllables, position):
-		#elif self.rules.rule2(self.verse.syllables, position) and not self.rules.hiat(self.verse.syllables, position):
+		elif self.rules.rule_nl2(self.verse.syllables, position):
 			return True
-		elif self.rules.rule4(self.verse.syllables, position) and not self.rules.muta(self.verse.syllables, position):
+		elif self.rules.rule_pl(self.verse.syllables, position) and not self.rules.rule_ml(self.verse.syllables, position):
 			return True
 		else:
 			return False

@@ -32,6 +32,9 @@ simple = SimpleFSA('simple')
 for line in lines:
 #for line in selection:
 	scansion = ''
+	synizesis = False
+	solutionLength = 0
+	correctionLength = 0
 	
 	vals = re.split(r'\t+', line.rstrip('\r?\n?'))
 
@@ -56,6 +59,8 @@ for line in lines:
 			simple.start_analysis()
 			if len(simple.verse.correction) > 0 and not re.search(r'\?', simple.verse.correction):
 				scansion = simple.verse.correction
+				synizesis = simple.synizesis
+				solutionLength = simple.correctionLength
 		else:
 			print("WARNING: Incorrect syllable count: " + vals[0])
 
@@ -68,6 +73,8 @@ for line in lines:
 			simple.start_analysis()
 			if len(simple.verse.correction) > 0 and not re.search(r'\?', simple.verse.correction):
 				scansion = simple.verse.correction
+				synizesis = simple.synizesis
+				solutionLength = simple.correctionLength
 
 	elif syllable_count == 17:
 		scansion = '-** -** -** -** -** -X'
@@ -78,6 +85,8 @@ for line in lines:
 			simple.start_analysis()
 			if len(simple.verse.correction) > 0 and not re.search(r'\?', simple.verse.correction):
 				scansion = simple.verse.correction
+				synizesis = simple.synizesis
+				solutionLength = simple.correctionLength
 		
 	elif syllable_count == 13:
 		if hfsa13.state != 'waiting':
@@ -86,12 +95,13 @@ for line in lines:
 		hfsa13.start_analysis()
 		if hfsa13.state == 'no_spondeus_found':
 			hfsa13.not_found()
+		solutionLength = hfsa13.scansionLength
+		correctionLength = hfsa13.correctionLength
 		if hfsa13.state == 'success':
 			scansion = hfsa13.verse.scansion
-		#if not re.search(r'\?', hfsa13.verse.scansion) and hfsa13.state == 'success':
-		#	scansion = hfsa13.verse.scansion
 		elif len(hfsa13.verse.correction) > 0 and not re.search(r'\?', hfsa13.verse.correction):
 			scansion = hfsa13.verse.correction
+			synizesis = hfsa13.synizesis
 		elif not re.search(r'\?', hfsa13.verse.scansion):
 			scansion = hfsa13.verse.scansion
 		else:
@@ -104,12 +114,14 @@ for line in lines:
 		hfsa14.start_analysis()
 		if hfsa14.state == 'no_spondeus_found':
 			hfsa14.not_found()
+		solutionLength = hfsa14.scansionLength
+		correctionLength = hfsa14.correctionLength
+		solutionLength = hfsa14.scansionLength
 		if hfsa14.state == 'success':
 			scansion = hfsa14.verse.scansion
-		#if not re.search(r'\?', hfsa14.verse.scansion) and hfsa14.state == 'success':
-		#	scansion = hfsa14.verse.scansion
 		elif len(hfsa14.verse.correction) > 0 and not re.search(r'\?', hfsa14.verse.correction):
 			scansion = hfsa14.verse.correction
+			synizesis = hfsa14.synizesis
 		elif not re.search(r'\?', hfsa14.verse.scansion):
 			scansion = hfsa14.verse.scansion
 		else:
@@ -122,11 +134,13 @@ for line in lines:
 		hfsa15.start_analysis()
 		if hfsa15.state == 'no_spondeus_found':
 			hfsa15.not_found()	
-		#if not re.search(r'\?', hfsa15.verse.scansion) and hfsa15.state == 'success':
+		solutionLength = hfsa15.scansionLength
+		correctionLength = hfsa15.correctionLength
 		if hfsa15.state == 'success':
 			scansion = hfsa15.verse.scansion
 		elif len(hfsa15.verse.correction) > 0 and not re.search(r'\?', hfsa15.verse.correction):
 			scansion = hfsa15.verse.correction
+			synizesis = hfsa15.synizesis
 		elif not re.search(r'\?', hfsa15.verse.scansion):
 			scansion = hfsa15.verse.scansion
 		else:
@@ -139,11 +153,13 @@ for line in lines:
 		hfsa16.start_analysis()
 		if hfsa16.state == 'no_spondeus_found':
 			hfsa16.not_found()
-		#if not re.search(r'\?', hfsa16.verse.scansion) and hfsa16.state == 'success':
+		solutionLength = hfsa16.scansionLength
+		correctionLength = hfsa16.correctionLength
 		if hfsa16.state == 'success':
 			scansion = hfsa16.verse.scansion
 		elif len(hfsa16.verse.correction) > 0 and not re.search(r'\?', hfsa16.verse.correction):
 			scansion = hfsa16.verse.correction
+			synizesis = hfsa16.synizesis
 		elif not re.search(r'\?', hfsa16.verse.scansion):
 			scansion = hfsa16.verse.scansion
 		else:
@@ -152,6 +168,6 @@ for line in lines:
 	#output
 	if len(scansion) == 0:
 		scansion = 'NOT RESOLVED'
-	print("{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion), file=outfile)
+	print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(vals[0], vals[1], syllabified, scansion, synizesis, solutionLength, correctionLength), file=outfile)
 
 outfile.close()
