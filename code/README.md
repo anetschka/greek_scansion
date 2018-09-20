@@ -1,4 +1,4 @@
-#Basic usage
+# Basic usage
 
 You can perform annotations directly by calling `annotaty.py`:
 
