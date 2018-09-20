@@ -1,6 +1,6 @@
 # Basic usage
 
-You can perform annotations directly by calling `annotaty.py`:
+You can perform annotations directly by calling `annotate.py`:
 
 `python annotate.py <input file> <output file>`
 
