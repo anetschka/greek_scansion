@@ -43,4 +43,14 @@ This is the parent class for the hierarchical finite-state machines. Its functio
 
 ### Hierarchical finite-state machines
 
-These implement the complete annotation process. Before using a machine, reset it by calling `machinename.to_waiting()`. The analysis is started by calling `machinname.start_analysis()`. The correction process is started by calling `machinename.not_found()`.
+These implement the complete annotation process. Before using a machine, reset it by calling `<machinename>.to_waiting()`. The analysis is started by calling `<machinename>.start_analysis()`. The correction process is started by calling `<machinename>.not_found()`.
+
+## Transducer package
+
+This package contains the `fallbackTransducer` class, an HFST finite-state transducer. It takes a partly annotated hexameter string (e. g. -?? -- -- -- -? ??) and calculates its possible solutions. The transducer is accesible to the finite-state machines of the hAutomata package as a class member and it is called through its `apply` function.
+
+# Further code
+
+`baseline.py` tries to compute a baseline annotation, but, as said earlier, the CLTK baseline is not realistic. 
+
+`export_from_db.py` is custom code for exporting verses from my relational database. If necessary, you might modify it according to your needs.
