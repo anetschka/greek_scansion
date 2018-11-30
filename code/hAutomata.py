@@ -19,10 +19,6 @@ class ruleset(object):
 		current = text[position-1]
 		following = text[position]
 		if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)([αιουεωη][t]|[ςβγδθκλμνπρστφχξζψ])', current+following):
-		#the following used to be optimal 
-		#if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)', current):
-		#if re.search(r'(αι|οι|υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
-		#if re.search(r'(υι|ει|αυ|ευ|ου|ηι|ωι|ηυ)$', current):
 			return True
 		
 	#long by position
@@ -121,6 +117,7 @@ class annotator(object):
 	def _is_successful(self):
 		return self.success
 			
+	#sets self.verse.scansion based on FSAs' output (after local search)
 	def _make_spondeus(self, limit):
 		self.verse.scansion = '-'
 		for x in range(2, limit+1):
@@ -144,7 +141,8 @@ class annotator(object):
 				return False
 		return True
 
-	#function used to search the whole verse for long syllables (in fallback)
+	#function used to search the whole verse for long syllables (for global search)
+	#partially annotated string is completed by FST and verified
 	def _search_whole(self):
 		s_units = list(self.verse.scansion)
 		for x in range(1, len(s_units)-2): #no need to scan last two syllabs
@@ -166,6 +164,8 @@ class annotator(object):
 		self.verified()
 
 	#function used to correct faulty hexameter scheme: fallback to vowel-wise analysis
+	#Then, the FST is called. If the FST fails, a simple regex tries to identify synizesis candidates
+	#and calls this function again, recursively.
 	def _correct(self):
 		self._correct_string()
 		results = self._apply_transducer(mode='correction')
@@ -252,6 +252,7 @@ class annotator(object):
 				elif x < len(letters)-1 and (letters[x] + letters[x+1] not in diphtongs and letters[x] + letters[x+1] not in ['αι', 'οι']):
 					self.verse.correction += '?'
 
+	#this function is called by the FSAs for finding long syllables (in local search)
 	def _search_long(self, position):
 		if self.rules.rule_zf(self.verse.syllables, position):
 			return True
