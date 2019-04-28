@@ -47,7 +47,7 @@ These implement the complete annotation process. Before using a machine, reset i
 
 ## Transducer package
 
-This package contains the `fallbackTransducer` class, an HFST finite-state transducer. It takes a partly annotated hexameter string (e. g. -?? -- -- -- -? ??) and calculates its possible solutions. The transducer is accesible to the finite-state machines of the hAutomata package as a class member and it is called through its `apply` function.
+This package contains the `fallbackTransducer` class, an HFST finite-state transducer. It takes a partly annotated hexameter string (e. g. -?? -- -- -- -? ??) and calculates its possible solutions. The transducer is accessible to the finite-state machines of the hAutomata package as a class member and it is called through its `apply` function.
 
 # Further code
 
