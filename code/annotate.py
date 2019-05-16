@@ -116,7 +116,6 @@ for line in lines:
 			hfsa14.not_found()
 		solutionLength = hfsa14.scansionLength
 		correctionLength = hfsa14.correctionLength
-		solutionLength = hfsa14.scansionLength
 		if hfsa14.state == 'success':
 			scansion = hfsa14.verse.scansion
 		elif len(hfsa14.verse.correction) > 0 and not re.search(r'\?', hfsa14.verse.correction):
