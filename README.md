@@ -13,7 +13,7 @@ My knowledge of Ancient Greek is very limited. If you are a philologist or have 
 
 ## Citing 
 
-Anne-Kathrin Schumann, Christoph Beierle, Norbert Blößner: "Using Finite-State Machines to Automatically Scan Classical Greek Hexameter". Presented at the Digital Humanities Conference 2019. Utrecht, Netherlands, July 9-12, 2019. [Preprint.](https://arxiv.org/abs/2101.11437)
+Anne-Kathrin Schumann, Christoph Beierle, Norbert Blößner: "Using finite-state machines to automatically scan Ancient Greek hexameter". Digital Scholarship in the Humanities. [Preprint.](https://academic.oup.com/dsh/advance-article-abstract/doi/10.1093/llc/fqab071/6462895)
 
 ## License
 
