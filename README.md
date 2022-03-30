@@ -2,7 +2,7 @@
 
 greek_scansion is designed to automatically annotate Ancient Greek hexameter. That is, it tries, for any valid hexameter verse, to find the correct sequence of long and short syllables.
 
-The repository contains the program code and two evaluation scripts. Further information on both is provided in the appropriate folders. Since this project is the result of academic work, the folder **thesis** contains a long explanation on the project's motivation, background, and implementation details (in German). English readers will find a description of the approach and algorithm in a new [English-language preprint](https://arxiv.org/abs/2101.11437).
+The repository contains the program code and two evaluation scripts. Further information on both is provided in the appropriate folders. Since this project is the result of academic work, the folder **thesis** contains a long explanation on the project's motivation, background, and implementation details (in German). English readers will find a description of the approach and algorithm in this [paper](https://academic.oup.com/dsh/article-abstract/37/1/242/6462895).
 
 ## Bug fixes and improvements
 
@@ -13,7 +13,7 @@ My knowledge of Ancient Greek is very limited. If you are a philologist or have 
 
 ## Citing 
 
-Anne-Kathrin Schumann, Christoph Beierle, Norbert Blößner: "Using finite-state machines to automatically scan Ancient Greek hexameter". Digital Scholarship in the Humanities. [Preprint.](https://academic.oup.com/dsh/advance-article-abstract/doi/10.1093/llc/fqab071/6462895)
+Anne-Kathrin Schumann, Christoph Beierle, Norbert Blößner: "Using finite-state machines to automatically scan Ancient Greek hexameter". Digital Scholarship in the Humanities 37(1), pp.242-253. [PDF.](https://academic.oup.com/dsh/article-abstract/37/1/242/6462895)
 
 ## License
 
